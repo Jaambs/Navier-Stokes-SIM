@@ -1,0 +1,16 @@
+# Binarios
+f1
+fluidos
+*.o
+*.out
+
+# Datos generados
+*.csv
+
+# Editor / sistema
+.vscode/
+*.swp
+.DS_Store
+
+# Especificación interna (no se publica)
+README.md

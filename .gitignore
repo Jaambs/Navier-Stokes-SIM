@@ -12,5 +12,5 @@ fluidos
 *.swp
 .DS_Store
 
-# Especificación interna (no se publica)
-README.md
+# Personal Checkbox for the project
+Milestones.md

@@ -1,7 +1,16 @@
 #pragma once
-#include <vector>
+#include <iostream>
 #include <cmath>
+#include <iomanip>
+#include <string>
+#include <fstream>
+#include <vector>
+#include <cstdlib>
+#include <cstdio>
+#include <raylib.h>
+#include <raymath.h>
 #include <cassert>
+#include <algorithm>
 
 
 
@@ -69,6 +78,7 @@ struct FaceY {
         return a[stride * i + j];
     }
 };
+
 //Center of the cells coordinates
 inline double xc(int i, double h) {return (i-0.5)*h;}
 inline double yc(int j, double h) {return (j-0.5)*h;}
@@ -78,3 +88,21 @@ inline double yu(int j, double h) {return (j-0.5)*h;}
 //Center of the horizontal faces coordinates
 inline double xv(int i, double h) {return (i-0.5)*h;}
 inline double yv(int j, double h) {return (j-1)*h;}
+
+//Calculation of the velocity on vertical faces, horizontal faces and centre
+
+//v evaluated on vertical face u(i,j)
+inline double vAtU(const FaceY& v, int i, int j) {
+    return 0.25 * (v(i-1,j)+v(i,j)+v(i-1,j+1) + v(i, j+1));
+}
+//u evaluated on horizontal face v(i,j)
+inline double uAtV(const FaceX& u, int i, int j) {
+    return 0.25 * (u(i,j-1)+u(i,j)+u(i+1,j-1) + u(i+1, j));
+}
+// u and v evaluated on the center of the cell (i,j)
+inline double uAtCenter(const FaceX& u, int i, int j) {
+    return 0.5 * (u(i,j) + u(i+1,j));
+}
+inline double vAtCenter (const FaceY& v, int i, int j) {
+    return 0.5 * (v(i,j) + v(i,j+1));
+}

@@ -6,12 +6,7 @@ $$\frac{\partial \mathbf{u}}{\partial t} + (\mathbf{u}\cdot\nabla)\mathbf{u} = -
 
 ## Overview
 
-The goal of this project is to simulate a 2D channel flow past a circular cylinder and reproduce the Von Karman vortex street across different Reynolds numbers ($Re$):
-
-* $Re \lesssim 5$: Symmetric creeping flow, no separation.
-* $Re \sim 10\text{--}40$: Two steady, symmetric recirculation bubbles behind the cylinder.
-* $Re \gtrsim 47$: Symmetry breaking and onset of periodic vortex shedding.
-* $Re \sim 100\text{--}200$: Fully developed vortex street with Strouhal number $St = fD/U \approx 0.2$.
+The goal of this project is to simulate a 2D channel flow past a circular cylinder and reproduce the Von Karman vortex street across different Reynolds numbers ($Re$). 
 
 Each term of the equation (advection, viscosity, pressure projection, external forces) can be toggled independently at runtime to observe its effect on the flow.
 

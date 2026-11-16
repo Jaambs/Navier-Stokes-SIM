@@ -38,6 +38,8 @@ inline double sample(const Field& f, double gx, double gy) {
      +        s  *             t  * f(i0 + 1, j0 + 1);
 }
 
+// ----------- ADVECTION -------------
+
 //horizontal velocity advection (u on FaceX)
 inline void advectU(FaceX& un, const FaceX& u, const FaceY& v, double dt, double h) {
     for (int i=1; i<=u.nx; ++i) {
@@ -89,4 +91,25 @@ inline void advectScalar(CellField& d, const CellField& d0,
             d(i, j) = sample(d0, gx, gy);
         }
     }
+}
+
+// -------------- DIVERGENCE --------------
+//Function to calculate the divergence inside the cell with center i+0.5, j+0.5
+inline void divergence(CellField& div, const FaceX& u, const FaceY& v, double h) {
+    for (int i = 1; i <= div.nx; ++i) {
+        for (int j = 1; j <= div.ny; ++j) {
+            div(i, j) = (u(i + 1, j) - u(i, j) + v(i, j + 1) - v(i, j)) / h;
+        }
+    }
+}
+
+// Function to calculate the max value of a field inside an scalar field
+inline double maxAbs(const CellField& f) {
+    double max_val = 0.0;
+    for (int i = 1; i <= f.nx; ++i) {
+        for (int j = 1; j <= f.ny; ++j) {
+            max_val = std::max(max_val, std::abs(f(i, j)));
+        }
+    }
+    return max_val;
 }

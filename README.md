@@ -27,7 +27,7 @@ The solver uses Chorin's projection method (operator splitting) on a Marker-and-
 
 - [x] **M1** — MAC staggered grid and data structures (`CellField`, `FaceX`, `FaceY`)
 - [x] **M2** — Cross-grid interpolation and semi-Lagrangian advection
-- [ ] **M3** — Discrete divergence operator on MAC grid
+- [x] **M3** — Discrete divergence operator on MAC grid
 - [ ] **M4** — Poisson solver (Jacobi and Gauss-Seidel) with analytical verification
 - [ ] **M5** — Chorin pressure projection
 

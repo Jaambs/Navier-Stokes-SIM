@@ -12,6 +12,20 @@
 #include <cassert>
 #include <algorithm>
 #include "grid.hpp"
+// Dirichlet boundary condition p = 0 on physical walls 
+// Wall is half a cell between ghost and real cell because preassure lives on cell centers
+// (p(0,j)+p(1,j)) / 2 = 0 therefore p(0,j) = - p(1,j).
+inline void applyDirichletZero(CellField& p) {
+    for (int j = 1; j <= p.ny; ++j) {
+        p(0,j)         = -p(1,j);
+        p(p.nx+1, j)   = -p(p.nx, j);
+    }
+    for (int i = 1; i <= p.nx; ++i) {
+        p(i, 0)        = -p(i, 1);
+        p(i, p.ny + 1) = -p(i, p.ny);
+    }
+}
+//with this, ghost cells have the same value as the border real cells
 
 //Generic Bilineal interpolation algorithm
 template <typename Field>
@@ -94,6 +108,7 @@ inline void advectScalar(CellField& d, const CellField& d0,
 }
 
 // -------------- DIVERGENCE --------------
+
 //Function to calculate the divergence inside the cell with center i+0.5, j+0.5
 inline void divergence(CellField& div, const FaceX& u, const FaceY& v, double h) {
     for (int i = 1; i <= div.nx; ++i) {
@@ -112,4 +127,42 @@ inline double maxAbs(const CellField& f) {
         }
     }
     return max_val;
+}
+
+// --------------- Poisson Solver -----------------
+
+//Jacobi solver (will be unused just to compare with gauss-seidel)
+inline void jacobi(CellField& p, const CellField&rhs, double h, int iters) {
+    CellField p_new=p;
+    double h2 = h*h;
+
+    for (int k = 0; k < iters; ++k) {
+        applyDirichletZero(p);
+        for (int i = 1; i <= p.nx; ++i) {
+            for (int j = 1; j <= p.ny; ++j) {
+                p_new(i,j) = 0.25 * (p(i - 1, j) + p(i + 1, j)
+                                   + p(i, j - 1) + p(i, j + 1)
+                                   - h2 * rhs(i, j));
+            }
+        }
+        std::swap(p.a,p_new.a);
+    }
+    applyDirichletZero(p);
+}
+
+//GaussSeidel solver
+inline void gaussSeidel(CellField&p, const CellField& rhs, double h, double iters) {
+    double h2 = h * h;
+
+    for (int k = 0; k <= iters; ++k) {
+        applyDirichletZero(p);
+        for (int i = 1; i <= p.nx; ++i) {
+            for (int j = 1; j <= p.ny; ++j) {
+                p(i, j) = 0.25 * (p(i - 1, j) + p(i + 1, j)
+                                + p(i, j - 1) + p(i, j + 1)
+                                - h2 * rhs(i, j));
+            }
+        }
+        applyDirichletZero(p);
+    }
 }

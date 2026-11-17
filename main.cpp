@@ -16,54 +16,54 @@
 #include "solver.hpp"
 
 int main(){
-    Grid g{16, 16, 1.0 / 16.0};
-    FaceX u(g);
-    FaceY v(g);
-    CellField div(g);
+    int N = 32;
+    Grid g{N, N, 1.0 / N};
+        
+    //Test for Advection. Compare numerical to analitical solution
+    //in this case we take the sol p(x,y) = sen(pix)sen(piy)
+    //so rhs = -2pi*pi*sen(pix)sen(piy)
+    //objective to obtain p(x,y through the jacobi and gaussSeidel solver)
+    CellField rhs(g);
+    CellField p_exact(g);
 
-    //Test 1: u = x, v = 0 -> div must be equal to 1
-    for (int i = 1; i <= u.nx; ++i) {
-        for (int j = 1; j <= u.ny; ++j) {
-            u(i, j) = xu(i, g.h);
+    //fill the cells with analitical sol and the rhs
+    for (int i = 1; i <= g.nx; ++i) {
+        for (int j = 1; j <= g.ny; ++j) {
+            double x = xc(i, g.h);
+            double y = yc(j, g.h);
+            p_exact(i, j) = std::sin(PI*x)*std::sin(PI*y);
+            rhs(i, j) = -2*PI*PI*std::sin(PI*x)*std::sin(PI*y);
         }
     }
-
-    for (int i = 1; i <= v.nx; ++i) {
-        for (int j = 1; j <= v.ny; ++j) {
-            v(i, j) = 0.0;
+    //build a temp function to calculate the max error between teh two cells
+    auto maxError = [&](const CellField& p) {
+        double err = 0;
+        for (int i = 1; i <= g.nx; ++i) {
+            for (int j = 1; j <= g.ny; ++j) {
+                err=std::max(err,std::abs(p(i, j)-p_exact(i, j)));
+            }
         }
+        return err;
+    };
+
+    std::cout << std::setprecision(5) << std::scientific;
+    std::cout << "Error máximo con respecto al comportamiento exacto\n";
+    std::cout << "Iteraciones || Jacobi || Gauss-Seidel\n";
+
+    //compare the results of different number of interactions for jacobi and gauss-seidel
+    for (int iters : {50, 100, 200, 400, 800, 1600}) {
+        CellField p_jac(g);
+        CellField p_Seidel(g);
+
+        jacobi(p_jac, rhs, g.h, iters);
+        gaussSeidel(p_Seidel, rhs, g.h, iters);
+
+        std::cout << std::setw(11) << iters << "||"
+                  << std::setw(12) << maxError(p_jac)
+                  << std::setw(12) << maxError(p_Seidel) << "\n";
     }
 
-    divergence(div, u, v, g.h);
-    
-    // Measure the error regarding 1
-    double max_err_test1 = 0.0;
-    for (int i = 1; i <= div.nx; ++i) {
-        for (int j = 1; j <= div.ny; ++j) {
-            max_err_test1 = std::max(max_err_test1, std::abs(div(i, j) - 1.0));
-        }
-    }
 
-    // Printing the results
-    std::cout << std::scientific << std::setprecision(3);
-    std::cout << "Test 1 (u=x, v=0)  -> div(5,5) = " << div(5, 5)
-              << " | Error max respecto a 1.0: " << max_err_test1 << "\n";
 
-    // Test 2 u = y, v = -x -> div aprox 0
-    for (int i = 1; i <= u.nx; ++i) {
-        for (int j = 1; j <= u.ny; ++j) {
-            u(i, j) = yu(j, g.h);
-        }
-    }
-
-    for (int i = 1; i <= v.nx; ++i) {
-        for (int j = 1; j <= v.ny; ++j) {
-            v(i, j) = -xv(i, g.h);
-        }
-    }
-
-    divergence(div,u,v,g.h);
-    std::cout << "Test 2 (u=y, v=-x) -> maxAbs(div) = " << maxAbs(div) << "\n";
-    
     return 0;
 }

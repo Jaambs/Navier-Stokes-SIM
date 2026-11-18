@@ -1,16 +1,10 @@
 #pragma once
-#include <iostream>
 #include <cmath>
-#include <iomanip>
-#include <string>
 #include <fstream>
 #include <vector>
 #include <cstdlib>
-#include <cstdio>
-#include <raylib.h>
-#include <raymath.h>
 #include <cassert>
-#include <algorithm>
+
 
 
 

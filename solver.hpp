@@ -12,9 +12,14 @@
 #include <cassert>
 #include <algorithm>
 #include "grid.hpp"
+#include "mouse.hpp"
+
+//----------------------- BOUNDARY CONDITIONS -----------------------------
+
 // Dirichlet boundary condition p = 0 on physical walls 
 // Wall is half a cell between ghost and real cell because preassure lives on cell centers
 // (p(0,j)+p(1,j)) / 2 = 0 therefore p(0,j) = - p(1,j).
+//with this, ghost cells have the same value as the border real cells
 inline void applyDirichletZero(CellField& p) {
     for (int j = 1; j <= p.ny; ++j) {
         p(0,j)         = -p(1,j);
@@ -25,7 +30,45 @@ inline void applyDirichletZero(CellField& p) {
         p(i, p.ny + 1) = -p(i, p.ny);
     }
 }
-//with this, ghost cells have the same value as the border real cells
+
+//Von Neumann boundary condition
+//The derivative with respect to time must be 0 on the walls, so the gradient between the ghost cells
+//and the next real cell must be 0, therefore the ghost cell value must be equal to the real cell value
+inline void applyPressureNeumann(CellField& p) {
+    for (int j = 1; j <= p.ny; ++j) {
+        p(0,j)         = p(1,j);
+        p(p.nx+1, j)   = p(p.nx, j);
+    }
+    for (int i = 1; i <= p.nx; ++i) {
+        p(i, 0)        = p(i, 1);
+        p(i, p.ny + 1) = p(i, p.ny);
+    }
+}
+
+//Boundary conditions for the velocity, no tresspassing
+inline void applyVelocityBC(FaceX& u, FaceY& v) {
+    //No tresspassing meaning velocity = 0 on real walls
+    for (int j = 1; j <= u.ny; ++j) {
+        u(1, j)    = 0.0;
+        u(u.nx, j) = 0.0;
+    }
+    for (int i = 1; i <= v.nx; ++i) {
+        v(i, 1)    = 0.0;
+        v(i, v.ny) = 0.0;
+    }
+
+    //No sliding condition, tangencial velocity on boundary = 0
+    for (int i = 0; i <= u.nx; ++i) {
+        u(i, 0)      = -u(i, 1);
+        u(i, u.ny+1) = -u(i, u.ny);
+    }
+    for (int j = 0; j <= v.ny; ++j) {
+        v(0, j)      = -v(1, j);
+        v(v.nx+1, j) = -v(v.nx, j);
+    }
+}
+
+//----------------------------------------------------
 
 //Generic Bilineal interpolation algorithm
 template <typename Field>
@@ -166,3 +209,49 @@ inline void gaussSeidel(CellField&p, const CellField& rhs, double h, double iter
         applyDirichletZero(p);
     }
 }
+//GaussSeidel with Neumann condition
+inline void gaussSeidelNeumann(CellField&p, const CellField& rhs, double h, double iters) {
+    double h2 = h * h;
+
+    for (int k = 0; k <= iters; ++k) {
+        applyPressureNeumann(p);
+        for (int i = 1; i <= p.nx; ++i) {
+            for (int j = 1; j <= p.ny; ++j) {
+                p(i, j) = 0.25 * (p(i - 1, j) + p(i + 1, j)
+                                + p(i, j - 1) + p(i, j + 1)
+                                - h2 * rhs(i, j));
+            }
+        }
+        applyPressureNeumann(p);
+    }
+}
+
+// ------------------ PROJECTION ------------------
+inline void project(FaceX& u, FaceY& v, CellField& p, CellField& div, double dt, double h, int iter) {
+    //use divergence to calcuulate the rhs eq
+    divergence(div, u, v, h);
+    CellField rhs(Grid{div.nx, div.ny, h});
+    for (int i = 1; i <= div.nx; ++i) {
+        for (int j = 1; j <= div.ny; ++j) {
+            rhs(i, j) = div(i, j) / dt;
+        }
+    }
+    //Solve with gaussSeidel
+    gaussSeidelNeumann(p, rhs, h, iter);
+
+    //substract the pressure gradient on the inner faces
+    for (int i = 2; i <= u.nx - 1; ++i) {
+        for (int j = 1; j <= u.ny; ++j) {
+            u(i, j) -= dt * (p(i, j) - p(i - 1, j)) / h;
+        }
+    }
+    for (int i = 1; i <= v.nx; ++i) {
+        for (int j = 2; j <= v.ny - 1; ++j) {
+            v(i, j) -= dt * (p(i, j) - p(i, j - 1)) / h;
+        }
+    }
+
+    //reimpose velocity BC on walls
+    applyVelocityBC(u, v);
+}
+

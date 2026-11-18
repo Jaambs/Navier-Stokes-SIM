@@ -1,6 +1,6 @@
 # Navier-Stokes SIM
 
-2D incompressible Navier-Stokes solver written from scratch in C++, using a staggered MAC grid and real-time visualization with raylib.
+2D incompressible Navier-Stokes solver written using a staggered MAC grid and real-time visualization with raylib.
 
 $$\frac{\partial \mathbf{u}}{\partial t} + (\mathbf{u}\cdot\nabla)\mathbf{u} = -\frac{1}{\rho}\nabla p + \nu\nabla^2\mathbf{u} + \mathbf{f}, \qquad \nabla\cdot\mathbf{u}=0$$
 
@@ -29,11 +29,11 @@ The solver uses Chorin's projection method (operator splitting) on a Marker-and-
 - [x] **M2** — Cross-grid interpolation and semi-Lagrangian advection
 - [x] **M3** — Discrete divergence operator on MAC grid
 - [x] **M4** — Poisson solver (Jacobi and Gauss-Seidel) with analytical verification
-- [ ] **M5** — Chorin pressure projection
+- [x] **M5** — Chorin pressure projection
 
 ### Phase 2: Visualization and Channel Physics
 
-- [ ] **M6** — Interactive window with `raylib` (dye and mouse forces)
+- [x] **M6** — Interactive window with `raylib` (dye and mouse forces)
 - [ ] **M7** — Implicit viscosity and live Reynolds number control
 - [ ] **M8** — Vorticity field visualization ($\omega = \nabla\times\mathbf{u}$)
 - [ ] **M9** — Rectangular channel boundary conditions and Poiseuille flow validation

@@ -34,8 +34,8 @@ The solver uses Chorin's projection method (operator splitting) on a Marker-and-
 ### Phase 2: Visualization and Channel Physics
 
 - [x] **M6** — Interactive window with `raylib` (dye and mouse forces)
-- [ ] **M7** — Implicit viscosity and live Reynolds number control
-- [ ] **M8** — Vorticity field visualization ($\omega = \nabla\times\mathbf{u}$)
+- [x] **M7** — Implicit viscosity and live Reynolds number control
+- [x] **M8** — Vorticity field visualization ($\omega = \nabla\times\mathbf{u}$)
 - [ ] **M9** — Rectangular channel boundary conditions and Poiseuille flow validation
 - [ ] **M10** — Cylinder obstacle masking and steady recirculation ($Re \approx 20$)
 - [ ] **M11** — Von Karman vortex street and Strouhal number ($St$) measurement
@@ -45,3 +45,7 @@ The solver uses Chorin's projection method (operator splitting) on a Marker-and-
 * C++17
 * [raylib](https://www.raylib.com/) (from M6 onwards)
 * Python 3 (`numpy`, `matplotlib`) for validation plots
+
+## Build
+
+* Execute build.sh

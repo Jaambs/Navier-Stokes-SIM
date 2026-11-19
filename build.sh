@@ -11,5 +11,5 @@ g++ -O3 -std=c++17 -Wall -Wextra -Wshadow main.cpp -o f1 \
 cat <<'EOF'
 
 built ./f1
-use:  ./f1 [N]        grid is N x N (default 128)
+use:  ./f1 
 EOF

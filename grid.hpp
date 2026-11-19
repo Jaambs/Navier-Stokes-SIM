@@ -1,4 +1,3 @@
-#pragma once
 #include <cmath>
 #include <fstream>
 #include <vector>
@@ -44,13 +43,9 @@ struct FaceX {
     FaceX(const Grid& g) 
         : nx(g.nx + 1), ny(g.ny), stride(g.ny + 2), a((g.nx + 3) * (g.ny + 2), 0.0) {}
 
-    double& operator()(int i, int j) {
-        assert(i >= 0 && i <= nx + 1 && j >= 0 && j <= ny + 1);
-        return a[stride * i + j];
+    double& operator()(int i, int j) {return a[stride * i + j];
     }
-    double operator()(int i, int j) const {
-        assert(i >= 0 && i <= nx + 1 && j >= 0 && j <= ny + 1);
-        return a[stride * i + j];
+    double operator()(int i, int j) const {return a[stride * i + j];
     }
 };
 
@@ -63,13 +58,9 @@ struct FaceY {
     FaceY(const Grid& g) 
         : nx(g.nx), ny(g.ny + 1), stride(g.ny + 3), a((g.nx + 2) * (g.ny + 3), 0.0) {}
 
-    double& operator()(int i, int j) {
-        assert(i >= 0 && i <= nx + 1 && j >= 0 && j <= ny + 1);
-        return a[stride * i + j];
+    double& operator()(int i, int j) {return a[stride * i + j];
     }
-    double operator()(int i, int j) const {
-        assert(i >= 0 && i <= nx + 1 && j >= 0 && j <= ny + 1);
-        return a[stride * i + j];
+    double operator()(int i, int j) const {return a[stride * i + j];
     }
 };
 

@@ -36,9 +36,10 @@ The solver uses Chorin's projection method (operator splitting) on a Marker-and-
 - [x] **M6** — Interactive window with `raylib` (dye and mouse forces)
 - [x] **M7** — Implicit viscosity and live Reynolds number control
 - [x] **M8** — Vorticity field visualization ($\omega = \nabla\times\mathbf{u}$)
-- [ ] **M9** — Rectangular channel boundary conditions and Poiseuille flow validation
-- [ ] **M10** — Cylinder obstacle masking and steady recirculation ($Re \approx 20$)
+- [x] **M9** — Rectangular channel boundary conditions and Poiseuille flow validation
+- [x] **M10** — Cylinder obstacle masking and steady recirculation ($Re \approx 20$)
 - [ ] **M11** — Von Karman vortex street and Strouhal number ($St$) measurement
+- [ ] **M12** — Implement the capacity to activate/deactivate Navier-Stokes equation terms
 
 ## Dependencies
 

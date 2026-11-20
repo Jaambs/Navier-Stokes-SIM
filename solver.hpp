@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <cmath>
 #include <iomanip>
@@ -282,7 +283,7 @@ inline void DiffuseV(FaceY& v, const FaceY& v0, double nu, double dt, double h, 
 
 //Diffusion for channel
 
-inline void diffuseChannelU(FaceX& u, const FaceX& u0, const FaceY& v_dummy,
+inline void diffuseChannelU(FaceX& u, const FaceX& u0, const FaceY& /*v_dummy*/,
                             double nu, double dt, double h, double U_in, int iters = 30) {
     if (nu <= 0.0) { u.a = u0.a; return; }
     double alpha = (nu * dt) / (h * h);

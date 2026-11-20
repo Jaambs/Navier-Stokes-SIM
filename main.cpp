@@ -17,6 +17,7 @@
 #include "mouse.hpp"
 #include "vorticity.hpp"
 #include "BC.hpp"
+#include "cylinder.hpp"
 
 int main(){
 
@@ -24,16 +25,18 @@ int main(){
 
     const int NW         = 256;
     const int NH         = 128;
-    const int SCALE      = 6;
+    const int SCALE      = 1;
     const int WIN_HEIGHT = NH * SCALE;
     const int WIN_WIDTH  = NW * SCALE;
-    const double dt      = 1.0 / 60.0;
+    const double dt      = 1.0 / 30.0;
     double sim_time      = 0.0;
-    double nu = 1e-4;
+    double nu = 0.0;
     double force = 15.0;
-    const double U_ref = 1.0;
+    const double U_in = 1.0;
     const double L_ref = 1.0;
     Grid g{NW, NH, 1.0 / NH};
+    CylinderMask cyl(g);
+    bool inject_dye = true;
 
     // Physical size of the domain: NW*h x NH*h = 2 x 1 for a 2:1 channel
     const double DOMAIN_W = NW * g.h;
@@ -56,7 +59,7 @@ int main(){
     // ---- Inicialization of the program ----
 
     InitWindow(WIN_WIDTH, WIN_HEIGHT, "Navier-Stokes SIM (MAC 256x128)");
-    SetTargetFPS(60);
+    SetTargetFPS(30);
 
     Image Img = GenImageColor(NW, NH, BLACK);
     Texture2D tex = LoadTextureFromImage(Img);
@@ -69,7 +72,7 @@ int main(){
 
         //Reset the fluid with R
         if (IsKeyPressed(KEY_R)) {
-        std::fill(u.a.begin(), u.a.end(), 0.0);
+        std::fill(u.a.begin(), u.a.end(), U_in);
         std::fill(v.a.begin(), v.a.end(), 0.0);
         std::fill(p.a.begin(), p.a.end(), 0.0);
         std::fill(dyeR.a.begin(), dyeR.a.end(), 0.0);
@@ -86,10 +89,10 @@ int main(){
 
         //change viscosity
         if (IsKeyPressed(KEY_EQUAL) || IsKeyPressed(KEY_KP_ADD)) {
-            nu = (nu == 0) ? 1e-5 : nu *= 1.5;
+            nu = (nu <= 0.0) ? 1e-5 : nu * 1.5;
         }
         if (IsKeyPressed(KEY_MINUS) || IsKeyPressed(KEY_KP_SUBTRACT)) {
-            nu = (nu <= 1e-7) ? 0 : nu /= 1.5;
+            nu = (nu <= 1e-7) ? 0.0 : nu / 1.5;
         }
         if (IsKeyPressed(KEY_ZERO) || IsKeyPressed(KEY_KP_0)) {
             nu = 0.0;
@@ -97,14 +100,40 @@ int main(){
 
         //Change force strengh
         if (IsKeyPressed(KEY_PERIOD)) {
-            force = (force <= 1e-2) ? 5 : force *= 1.5;
+            force = (force <= 1e-2) ? 5.0 : force * 1.5;
         }
         if (IsKeyPressed(KEY_COMMA)) {
-            force = (force <= 1e-2) ? force : force /= 1.5;
+            force = (force <= 1e-2) ? force : force / 1.5;
         }
         if (IsKeyPressed(KEY_M)) {
             force =15;
         }
+        //Inyection of dye
+        int cy = g.ny / 2;
+        int offset = 3;
+        int half_width = 1; 
+        if (IsKeyPressed(KEY_D)) inject_dye = !inject_dye;
+        for (int j = 1; j <= g.ny; ++j) {
+            bool top_line = inject_dye && (std::abs(j - (cy + offset)) <= half_width);
+            bool bot_line = inject_dye && (std::abs(j - (cy - offset)) <= half_width);
+
+            if (top_line) {
+                dyeR(1, j) = 0.0;
+                dyeG(1, j) = 0.85;
+                dyeB(1, j) = 1.0;
+            } else if (bot_line) {
+                // Línea inferior: Naranja
+                dyeR(1, j) = 1.0;
+                dyeG(1, j) = 0.3;
+                dyeB(1, j) = 0.1;
+            } else {
+                // Fluido limpio en el resto de la entrada (y cuando apagas con D)
+                dyeR(1, j) = 0.0;
+                dyeG(1, j) = 0.0;
+                dyeB(1, j) = 0.0;
+            }
+        }
+
 
         // For the simulation loop we follow the stablished Chorin schematic
         // Add forces -> advect -> diffuse -> project -> advect dye 
@@ -136,22 +165,34 @@ int main(){
         advectV(vn, u, v, dt, g.h);
         std::swap(u.a, un.a);
         std::swap(v.a, vn.a);
-        applyVelocityBC(u, v);
+        applyChannelVelocityBC(u, v, U_in, true);
+        applyCylinderVelocityBC(u, v, cyl);
 
         //3. --- Diffuse ---
         std::swap(u.a, un.a);
         std::swap(v.a, vn.a);
-        DiffuseU(u, un, nu, dt, g.h, 25);
-        DiffuseV(v, vn, nu, dt, g.h, 25);
+        diffuseChannelU(u, un, v, nu, dt, g.h, U_in, 30);
+        diffuseChannelV(v, vn, nu, dt, g.h, 30);
+        applyCylinderVelocityBC(u, v, cyl);
 
         // 4. --- Project ---
-        project(u, v, p, div, dt, g.h, 10);
+        projectChannel(u, v, p, div, dt, g.h, U_in, 80);
+        applyCylinderVelocityBC(u, v, cyl);
 
         // 5. --- Advect Dye ---
 
         advectScalar(dyeR_new, dyeR, u, v, dt, g.h);
         advectScalar(dyeG_new, dyeG, u, v, dt, g.h);
         advectScalar(dyeB_new, dyeB, u, v, dt, g.h);
+        for (int i = 1; i <= g.nx; ++i) {
+            for (int j = 1; j <= g.ny; ++j) {
+                if (cyl.isSolid(i,j)) {
+                    dyeR(i, j) = 0.0;
+                    dyeG(i, j) = 0.0;
+                    dyeB(i, j) = 0.0;
+                }
+            }
+        }
         std::swap(dyeR_new, dyeR);
         std::swap(dyeG_new, dyeG);
         std::swap(dyeB_new, dyeB);
@@ -171,19 +212,23 @@ int main(){
                     unsigned char r_c = static_cast<unsigned char>(std::clamp(dyeR(i, j), 0.0, 1.0) * 255.0);
                     unsigned char g_c = static_cast<unsigned char>(std::clamp(dyeG(i, j), 0.0, 1.0) * 255.0);
                     unsigned char b_c = static_cast<unsigned char>(std::clamp(dyeB(i, j), 0.0, 1.0) * 255.0);
-                    pixels[py * NW + px] = Color{r_c, g_c, b_c, 255};   
+                    pixels[py * NW + px] = Color{r_c, g_c, b_c, 255};
+                    if (cyl.isSolid(i, j)) {pixels[py * NW + px] = Color{180, 180, 180, 255};} 
                 }
                 else if (view == ViewMode::VORTICITY){
                     pixels[py * NW + px] = vorticityToColor(omega(i,j), 15.0);
+                    if (cyl.isSolid(i, j)) {pixels[py * NW + px] = Color{180, 180, 180, 255};}
                 }
                 else {
                     double uc = uAtCenter(u, i, j);
                     double vc = vAtCenter(v, i, j);
                     double speed = std::hypot(uc, vc);
-                    pixels[py * NW + px] = speedToColor(speed, 0.8);
+                    pixels[py * NW + px] = speedToColor(speed, 4);
+                    if (cyl.isSolid(i, j)) {pixels[py * NW + px] = Color{180, 180, 180, 255};}
                 }
             }
         }
+
         UpdateTexture(tex, Img.data);
 
         BeginDrawing();
@@ -192,7 +237,7 @@ int main(){
             DrawFPS(10, 10);
             DrawText("Press [R] to reset", 10, 35, 18, LIGHTGRAY);
             if (nu > 0.0) {
-                double Re = (U_ref * L_ref) / nu;
+                double Re = (U_in * L_ref) / nu;
                 DrawText(TextFormat("nu =%.2e | Re = %.1f", nu, Re), 10, 60, 20, YELLOW);
             }
             if (nu == 0.0) {

@@ -18,6 +18,9 @@
 #include "vorticity.hpp"
 #include "BC.hpp"
 #include "cylinder.hpp"
+#if defined(PLATFORM_WEB)
+    #include <emscripten/emscripten.h>
+#endif
 
 int main(){
 
@@ -59,15 +62,14 @@ int main(){
     // ---- Inicialization of the program ----
 
     InitWindow(WIN_WIDTH, WIN_HEIGHT, "Navier-Stokes SIM (MAC 256x128)");
-    SetTargetFPS(30);
 
     Image Img = GenImageColor(NW, NH, BLACK);
     Texture2D tex = LoadTextureFromImage(Img);
     SetTextureFilter(tex, TEXTURE_FILTER_BILINEAR);
 
     // ----- START OF THE SIMULATION LOOP -----
-
-    while(!WindowShouldClose()) {
+    SetTargetFPS(60);
+    while (!WindowShouldClose()) {
         sim_time += dt;
 
         //Reset the fluid with R
@@ -247,6 +249,10 @@ int main(){
             }
             DrawText(TextFormat("force =%.3e", force), 10, 85, 20, YELLOW);
         EndDrawing();
+
+        #if defined(PLATFORM_WEB)
+            emscripten_sleep(0);   // yield to the browser event loop (needs -sASYNCIFY)
+        #endif
     }
     UnloadTexture(tex);
     UnloadImage(Img);

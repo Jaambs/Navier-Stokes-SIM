@@ -14,3 +14,7 @@ fluidos
 
 # Personal Checkbox for the project
 Milestones.md
+
+# Web build artifacts
+web/
+libraylib_web.a

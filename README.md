@@ -41,11 +41,16 @@ The solver uses Chorin's projection method (operator splitting) on a Marker-and-
 - [ ] **M11** — Von Karman vortex street and Strouhal number ($St$) measurement
 - [ ] **M12** — Implement the capacity to activate/deactivate Navier-Stokes equation terms
 
+## QOL Features
+
+- [ ] — Create build.sh files to Windows
+- [ ] — Create a WebAssembly (HTML5) for publishing the code on GitHub Pages
+- [ ] — Port the code to run it using NVIDIA Grafics cards to be able to run bigger meshes
+
 ## Dependencies
 
 * C++17
 * [raylib](https://www.raylib.com/) (from M6 onwards)
-* Python 3 (`numpy`, `matplotlib`) for validation plots
 
 ## Build
 

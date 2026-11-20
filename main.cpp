@@ -25,7 +25,7 @@ int main(){
 
     const int NW         = 256;
     const int NH         = 128;
-    const int SCALE      = 1;
+    const int SCALE      = 6;
     const int WIN_HEIGHT = NH * SCALE;
     const int WIN_WIDTH  = NW * SCALE;
     const double dt      = 1.0 / 30.0;

@@ -157,7 +157,7 @@ int main(){
             double g_col = 0.5 + 0.5 * std::sin(sim_time * 1.5 + 4.188);
 
             applyMouseBrush(u, v, dyeR, dyeB, dyeG, mx, my, mdx, mdy, r_col, b_col, g_col, dt, g.h, force);
-            applyVelocityBC(u, v);
+            applyChannelVelocityBC(u, v, U_in, true);
         }
 
         //2. --- Advect ---
@@ -184,6 +184,11 @@ int main(){
         advectScalar(dyeR_new, dyeR, u, v, dt, g.h);
         advectScalar(dyeG_new, dyeG, u, v, dt, g.h);
         advectScalar(dyeB_new, dyeB, u, v, dt, g.h);
+        std::swap(dyeR_new, dyeR);
+        std::swap(dyeG_new, dyeG);
+        std::swap(dyeB_new, dyeB);
+
+        // Blank dye inside the cylinder AFTER the swap, on the field we just computed
         for (int i = 1; i <= g.nx; ++i) {
             for (int j = 1; j <= g.ny; ++j) {
                 if (cyl.isSolid(i,j)) {
@@ -193,9 +198,6 @@ int main(){
                 }
             }
         }
-        std::swap(dyeR_new, dyeR);
-        std::swap(dyeG_new, dyeG);
-        std::swap(dyeB_new, dyeB);
         
         //Compute vorticity if the view mode is Vorticity
         if (view == ViewMode::VORTICITY) {

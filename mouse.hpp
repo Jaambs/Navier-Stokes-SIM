@@ -11,7 +11,7 @@
 inline void applyMouseBrush(FaceX& u, FaceY& v, CellField& dyeR, CellField& dyeB, CellField& dyeG,
                             double mx, double my, double mdx, double mdy,
                             double r_color, double b_color, double g_color, double dt, double h, double force_strengh) {
-    double radius = 3*h;
+    double radius = 3*h * force_strengh * 0.1;
     double r2 = radius * radius;
 
     //Calculate a box around the mouse so we dont have to check every single box

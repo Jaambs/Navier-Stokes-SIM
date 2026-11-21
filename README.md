@@ -38,14 +38,14 @@ The solver uses Chorin's projection method (operator splitting) on a Marker-and-
 - [x] **M8** — Vorticity field visualization ($\omega = \nabla\times\mathbf{u}$)
 - [x] **M9** — Rectangular channel boundary conditions and Poiseuille flow validation
 - [x] **M10** — Cylinder obstacle masking and steady recirculation ($Re \approx 20$)
-- [ ] **M11** — Von Karman vortex street and Strouhal number ($St$) measurement
-- [ ] **M12** — Implement the capacity to activate/deactivate Navier-Stokes equation terms
+- [x] **M11** — Von Karman vortex street and Strouhal number ($St$) measurement
+- [x] **M12** — Implement the capacity to activate/deactivate Navier-Stokes equation terms
 
 ## QOL Features
 
-- [ ] — Create build.sh files to Windows
-- [ ] — Create a WebAssembly (HTML5) for publishing the code on GitHub Pages
-- [ ] — Port the code to run it using NVIDIA Grafics cards to be able to run bigger meshes
+- [x] — Create build.sh files to Windows (`build_win.sh` → `f1_fluid.exe`)
+- [x] — Create a WebAssembly (HTML5) for publishing the code on GitHub Pages
+  → spec y andamiaje en [`CUDA version/README.md`](CUDA%20version/README.md)
 
 ## Dependencies
 
@@ -55,3 +55,4 @@ The solver uses Chorin's projection method (operator splitting) on a Marker-and-
 ## Build
 
 * Execute build.sh
+* Windows (portable, statically linked `.exe`): `./build_win.sh` → `f1_fluid.exe`

@@ -33,13 +33,16 @@ int main(){
     const int WIN_WIDTH  = NW * SCALE;
     const double dt      = 1.0 / 30.0;
     double sim_time      = 0.0;
-    double nu = 0.0;
+    double nu = 1.67e-3;
     double force = 15.0;
     const double U_in = 1.0;
-    const double L_ref = 1.0;
+    const double L_ref = 1.0 / 6.0;
     Grid g{NW, NH, 1.0 / NH};
     CylinderMask cyl(g);
     bool inject_dye = true;
+    bool use_advection = true;
+    bool use_diffusion = true;
+    bool use_projection = true;
 
     // Physical size of the domain: NW*h x NH*h = 2 x 1 for a 2:1 channel
     const double DOMAIN_W = NW * g.h;
@@ -58,6 +61,15 @@ int main(){
     CellField dyeB(g), dyeB_new(g);
     enum class ViewMode {DYE, VORTICITY, VELOCITY};
     ViewMode view = ViewMode::DYE;
+
+    // ---- Strohual Measurements ----
+
+    int i_probe = static_cast<int>((cyl.xc_cyl + 3.0 * cyl.diameter) / g.h) + 1;
+    int j_probe = g.ny / 2 + 1;
+    //frecuency calculations and csv export variables
+    double prev_v = 0.0;
+    double last_cross_time = 1.0;
+    double strohual = 0.0;
 
     // ---- Inicialization of the program ----
 
@@ -80,6 +92,9 @@ int main(){
         std::fill(dyeR.a.begin(), dyeR.a.end(), 0.0);
         std::fill(dyeG.a.begin(), dyeG.a.end(), 0.0);
         std::fill(dyeB.a.begin(), dyeB.a.end(), 0.0);
+        prev_v = 0.0;
+        last_cross_time = -1.0;
+        strohual = 0.0;
         }
 
         //Switch Dye modes
@@ -88,26 +103,30 @@ int main(){
             else if (view == ViewMode::VORTICITY)   view = ViewMode::VELOCITY;
             else                                    view = ViewMode::DYE;
         }
+        //Turn equation terms
+        if (IsKeyPressed(KEY_ONE))   use_advection  = !use_advection;
+        if (IsKeyPressed(KEY_TWO))   use_diffusion  = !use_diffusion;
+        if (IsKeyPressed(KEY_THREE)) use_projection = !use_projection;
 
         //change viscosity
-        if (IsKeyPressed(KEY_EQUAL) || IsKeyPressed(KEY_KP_ADD)) {
+        if (IsKeyPressed(KEY_O)) {
             nu = (nu <= 0.0) ? 1e-5 : nu * 1.5;
         }
-        if (IsKeyPressed(KEY_MINUS) || IsKeyPressed(KEY_KP_SUBTRACT)) {
+        if (IsKeyPressed(KEY_P)) {
             nu = (nu <= 1e-7) ? 0.0 : nu / 1.5;
         }
-        if (IsKeyPressed(KEY_ZERO) || IsKeyPressed(KEY_KP_0)) {
+        if (IsKeyPressed(KEY_I)) {
             nu = 0.0;
         }
 
         //Change force strengh
-        if (IsKeyPressed(KEY_PERIOD)) {
+        if (IsKeyPressed(KEY_K)) {
             force = (force <= 1e-2) ? 5.0 : force * 1.5;
         }
-        if (IsKeyPressed(KEY_COMMA)) {
+        if (IsKeyPressed(KEY_L)) {
             force = (force <= 1e-2) ? force : force / 1.5;
         }
-        if (IsKeyPressed(KEY_M)) {
+        if (IsKeyPressed(KEY_J)) {
             force =15;
         }
         //Inyection of dye
@@ -159,27 +178,45 @@ int main(){
             double g_col = 0.5 + 0.5 * std::sin(sim_time * 1.5 + 4.188);
 
             applyMouseBrush(u, v, dyeR, dyeB, dyeG, mx, my, mdx, mdy, r_col, b_col, g_col, dt, g.h, force);
-            applyChannelVelocityBC(u, v, U_in, true);
+            applyChannelVelocityBC(u, v, U_in, true, nu);
         }
 
         //2. --- Advect ---
-        advectU(un, u, v, dt, g.h);
-        advectV(vn, u, v, dt, g.h);
-        std::swap(u.a, un.a);
-        std::swap(v.a, vn.a);
-        applyChannelVelocityBC(u, v, U_in, true);
-        applyCylinderVelocityBC(u, v, cyl);
+        if (use_advection) {
+            advectU(un, u, v, dt, g.h);
+            advectV(vn, u, v, dt, g.h);
+            std::swap(u.a, un.a);
+            std::swap(v.a, vn.a);
+            applyChannelVelocityBC(u, v, U_in, true, nu);
+            applyCylinderVelocityBC(u, v, cyl);
+        }
 
         //3. --- Diffuse ---
-        std::swap(u.a, un.a);
-        std::swap(v.a, vn.a);
-        diffuseChannelU(u, un, v, nu, dt, g.h, U_in, 30);
-        diffuseChannelV(v, vn, nu, dt, g.h, 30);
-        applyCylinderVelocityBC(u, v, cyl);
-
+        if (use_diffusion) {
+            std::swap(u.a, un.a);
+            std::swap(v.a, vn.a);
+            diffuseChannelU(u, un, nu, dt, g.h, U_in, 30);
+            diffuseChannelV(v, vn, nu, dt, g.h, 30);
+            applyCylinderVelocityBC(u, v, cyl);
+        }
         // 4. --- Project ---
-        projectChannel(u, v, p, div, dt, g.h, U_in, 80);
-        applyCylinderVelocityBC(u, v, cyl);
+        if (use_projection) {
+            projectChannel(u, v, p, div, dt, g.h, U_in, nu, 80);
+            applyCylinderVelocityBC(u, v, cyl);
+        }
+
+        //strohual meditions
+        double v_probe = v(i_probe, j_probe);
+
+        if (prev_v < 0.0 && v_probe >= 0.0) {
+            if (last_cross_time > 0.0) {
+                double period = sim_time - last_cross_time;
+                double freq = 1.0 / period;
+                strohual = (freq * cyl.diameter) / U_in;
+            }
+            last_cross_time = sim_time;
+        }
+        prev_v = v_probe;
 
         // 5. --- Advect Dye ---
 
@@ -239,19 +276,24 @@ int main(){
             ClearBackground(BLACK);
             DrawTextureEx(tex, Vector2{0.0f, 0.0f}, 0.0f, static_cast<float>(SCALE), WHITE);
             DrawFPS(10, 10);
-            DrawText("Press [R] to reset", 10, 35, 18, LIGHTGRAY);
             if (nu > 0.0) {
                 double Re = (U_in * L_ref) / nu;
-                DrawText(TextFormat("nu =%.2e | Re = %.1f", nu, Re), 10, 60, 20, YELLOW);
+                DrawText(TextFormat("nu =%.2e | Re = %.1f | St = %.3f", nu, Re, strohual), 10, 35, 15, YELLOW);
             }
             if (nu == 0.0) {
-                DrawText("nu = 0.0 | Re = inf", 10, 60, 20, YELLOW);
+                DrawText("nu = 0.0 | Re = inf", 10, 35, 15, YELLOW);
             }
-            DrawText(TextFormat("force =%.3e", force), 10, 85, 20, YELLOW);
+            DrawText(TextFormat("force =%.3e", force), 10, 60, 15, YELLOW);
+            DrawText(TextFormat("[1] Adv:%s  [2] Diff:%s  [3] Pres:%s",
+                                use_advection  ? "ON" : "OFF",
+                                use_diffusion  ? "ON" : "OFF",
+                                use_projection ? "ON" : "OFF"),
+                                10, 85, 15, ORANGE);
+            DrawText("Controls: [R] Reset | [I,O,P] Viscosity | [J,K,L] Brush | [1,2,3] EQ Terms | [D] Dye Injection | [TAB] Change View", 10, 110, 15, LIGHTGRAY);
         EndDrawing();
 
         #if defined(PLATFORM_WEB)
-            emscripten_sleep(0);   // yield to the browser event loop (needs -sASYNCIFY)
+            emscripten_sleep(0); 
         #endif
     }
     UnloadTexture(tex);

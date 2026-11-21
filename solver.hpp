@@ -201,7 +201,7 @@ inline void project(FaceX& u, FaceY& v, CellField& p, CellField& div, double dt,
 
 //Projection for channel
 inline void projectChannel(FaceX& u, FaceY& v, CellField& p, CellField& div,
-                           double dt, double h, double U_in, int iters = 80) {
+                           double dt, double h, double U_in, double nu, int iters = 80) {
     divergence(div, u, v, h);
     CellField rhs(Grid{div.nx, div.ny, h});
     for (int i = 1; i <= div.nx; ++i) {
@@ -237,7 +237,7 @@ inline void projectChannel(FaceX& u, FaceY& v, CellField& p, CellField& div,
     }
 
     // Reimponer entrada, paredes y fantasmas de salida (sin machacar u(u.nx, j))
-    applyChannelVelocityBC(u, v, U_in, false);
+    applyChannelVelocityBC(u, v, U_in, false, nu);
 }
 
 // ------------- Viscosity Diffusion ----------------
@@ -283,7 +283,7 @@ inline void DiffuseV(FaceY& v, const FaceY& v0, double nu, double dt, double h, 
 
 //Diffusion for channel
 
-inline void diffuseChannelU(FaceX& u, const FaceX& u0, const FaceY& /*v_dummy*/,
+inline void diffuseChannelU(FaceX& u, const FaceX& u0,
                             double nu, double dt, double h, double U_in, int iters = 30) {
     if (nu <= 0.0) { u.a = u0.a; return; }
     double alpha = (nu * dt) / (h * h);

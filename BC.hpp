@@ -92,28 +92,27 @@ inline void applyVelocityVBC(FaceY& v) {
 
 // Velocity BC for channel
 inline void applyChannelVelocityBC(FaceX& u, FaceY& v, double U_in,
-                                   bool set_outlet_face = true) {
-    // Entrada izquierda (x = 0 -> cara i = 1): u = U_in, v = 0
+                                   bool set_outlet_face, double nu) {
+    bool free_slip = (nu <= 0.0);
+
     for (int j = 1; j <= u.ny; ++j) {
         u(1, j) = U_in;
-        u(0, j) = U_in; // Fantasma izquierda
+        u(0, j) = U_in; 
     }
     for (int j = 1; j <= v.ny; ++j) {
-        v(0, j) = -v(1, j); // v = 0 justo en x = 0
+        v(0, j) = -v(1, j); 
     }
 
-    // Salida derecha (x = L -> cara i = u.nx): gradiente nulo (du/dx = 0, dv/dx = 0)
     for (int j = 1; j <= u.ny; ++j) {
         if (set_outlet_face) {
             u(u.nx, j) = u(u.nx - 1, j);
         }
-        u(u.nx + 1, j) = u(u.nx, j); // Fantasma derecha
+        u(u.nx + 1, j) = u(u.nx, j); 
     }
     for (int j = 1; j <= v.ny; ++j) {
         v(v.nx + 1, j) = v(v.nx, j);
     }
 
-    // Paredes inferior (j = 1) y superior (j = v.ny): no penetración (v = 0)
     for (int i = 1; i <= v.nx; ++i) {
         v(i, 1)        = 0.0;
         v(i, v.ny)     = 0.0;
@@ -121,21 +120,25 @@ inline void applyChannelVelocityBC(FaceX& u, FaceY& v, double U_in,
         v(i, v.ny + 1) = 0.0;
     }
 
-    // Paredes inferior y superior: no deslizamiento (u = 0 en y = 0 e y = H)
     for (int i = 0; i <= u.nx + 1; ++i) {
+        if (free_slip) {
+            u(i, 0)       = u(i, 1);
+            u(i, u.ny +1) = u(i, u.ny);
+        } else {
         u(i, 0)        = -u(i, 1);
         u(i, u.ny + 1) = -u(i, u.ny);
+        }
     }
 }
 
 // Pressure BC for channel
 inline void applyChannelPressureBC(CellField& p) {
     for (int j = 1; j <= p.ny; ++j) {
-        p(0, j)        =  p(1, j);      // Entrada: Neumann (dp/dx = 0)
-        p(p.nx + 1, j) = -p(p.nx, j);   // Salida:  Dirichlet (p = 0 en x = L)
+        p(0, j)        =  p(1, j);      
+        p(p.nx + 1, j) = -p(p.nx, j);   
     }
     for (int i = 1; i <= p.nx; ++i) {
-        p(i, 0)        = p(i, 1);       // Suelo: Neumann (dp/dy = 0)
-        p(i, p.ny + 1) = p(i, p.ny);    // Techo: Neumann (dp/dy = 0)
+        p(i, 0)        = p(i, 1);       
+        p(i, p.ny + 1) = p(i, p.ny);    
     }
 }

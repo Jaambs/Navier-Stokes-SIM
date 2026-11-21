@@ -3,6 +3,7 @@ f1
 fluidos
 *.o
 *.out
+f1_fluid.exe
 
 # Datos generados
 *.csv

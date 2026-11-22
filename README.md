@@ -45,7 +45,6 @@ The solver uses Chorin's projection method (operator splitting) on a Marker-and-
 
 - [x] — Create build.sh files to Windows (`build_win.sh` → `f1_fluid.exe`)
 - [x] — Create a WebAssembly (HTML5) for publishing the code on GitHub Pages
-  → spec y andamiaje en [`CUDA version/README.md`](CUDA%20version/README.md)
 
 ## Dependencies
 

@@ -10,10 +10,10 @@
 
 //Function to drop dye and apply forces when moving the mouse
 inline void applyMouseBrush(FaceX& u, FaceY& v, CellField& dyeR, CellField& dyeB, CellField& dyeG,
-                            double mx, double my, double mdx, double mdy,
-                            double r_color, double b_color, double g_color, double dt, double h, double force_strengh) {
-    double radius = 3*h * force_strengh * 0.1;
-    double r2 = radius * radius;
+                            Real mx, Real my, Real mdx, Real mdy,
+                            Real r_color, Real b_color, Real g_color, Real dt, Real h, Real force_strengh) {
+    Real radius = 3*h * force_strengh * 0.1f;
+    Real r2 = radius * radius;
 
     //Calculate a box around the mouse so we dont have to check every single box
     int i_min = std::max(2,        static_cast<int>((mx - radius) / h));
@@ -24,11 +24,11 @@ inline void applyMouseBrush(FaceX& u, FaceY& v, CellField& dyeR, CellField& dyeB
     //Add horizontal velocity on FaceX
     for (int i = i_min; i <= i_max; ++i) {
         for (int j = j_min; j <= j_max; ++j) {
-            double dx = xu(i, h) - mx;
-            double dy = yu(j, h) - my;
-            double d2 = dx * dx + dy * dy;
+            Real dx = xu(i, h) - mx;
+            Real dy = yu(j, h) - my;
+            Real d2 = dx * dx + dy * dy;
             if (d2 < r2) {
-                double w = std::exp (-d2/(0.5 * r2)); //smooth profile
+                Real w = std::exp (Real(-d2/(0.5f * r2))); //smooth profile
                 u(i, j) += dt * force_strengh * mdx * w;
             }
         }
@@ -43,11 +43,11 @@ inline void applyMouseBrush(FaceX& u, FaceY& v, CellField& dyeR, CellField& dyeB
 
     for (int i = i_min; i <= i_max; ++i) {
         for (int j = j_min; j <= j_max; ++j) {
-            double dx = xv(i, h) - mx;
-            double dy = yv(j, h) - my;
-            double d2 = dx * dx + dy * dy;
+            Real dx = xv(i, h) - mx;
+            Real dy = yv(j, h) - my;
+            Real d2 = dx * dx + dy * dy;
             if (d2 < r2) {
-                double w = std::exp (-d2/(0.5 * r2)); //smooth profile
+                Real w = std::exp (Real(-d2/(0.5f * r2))); //smooth profile
                 v(i, j) += dt * force_strengh * mdy * w;
             }
         }
@@ -62,14 +62,14 @@ inline void applyMouseBrush(FaceX& u, FaceY& v, CellField& dyeR, CellField& dyeB
     //Add dye on cell centers
     for (int i = i_min; i <= i_max; ++i) {
         for (int j = j_min; j <= j_max; ++j) {
-            double dx = xc(i, h) - mx;
-            double dy = yc(j, h) - my;
-            double d2 = dx * dx + dy * dy;
+            Real dx = xc(i, h) - mx;
+            Real dy = yc(j, h) - my;
+            Real d2 = dx * dx + dy * dy;
             if (d2 < r2) {
-                double w = std::exp (-d2 / (0.5 * r2));
-                dyeR(i, j) = std::min(1.0, dyeR(i, j) + 0.5 * r_color * w);
-                dyeB(i, j) = std::min(1.0, dyeB(i, j) + 0.5 * b_color * w);
-                dyeG(i, j) = std::min(1.0, dyeG(i, j) + 0.5 * g_color * w);
+                Real w = std::exp (Real(-d2 / (0.5f * r2)));
+                dyeR(i, j) = std::min(1.0f, dyeR(i, j) + 0.5f * r_color * w);
+                dyeB(i, j) = std::min(1.0f, dyeB(i, j) + 0.5f * b_color * w);
+                dyeG(i, j) = std::min(1.0f, dyeG(i, j) + 0.5f * g_color * w);
             }
         }
     }

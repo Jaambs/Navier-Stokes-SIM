@@ -32,14 +32,14 @@ int main(){
     const int SCALE      = 6;
     const int WIN_HEIGHT = NH * SCALE;
     const int WIN_WIDTH  = NW * SCALE;
-    const double dt      = 1.0 / 60.0;
-    double sim_time      = 0.0;
+    const Real dt      = 1.0 / Real(60.0);
+    Real sim_time      = 0.0f;
     SetTargetFPS(60);
-    double nu = 1.67e-3;
-    double force = 15.0;
-    const double U_in = 1.0;
-    const double L_ref = 1.0 / 6.0;
-    Grid g{NW, NH, 1.0 / NH};
+    Real nu = Real(1.67e-3);
+    Real force = Real(15.0);
+    const Real U_in = 1.0f;
+    const Real L_ref = 1.0f / 6.0f;
+    Grid g{NW, NH, 1.0f / NH};
     CylinderMask cyl(g);
     bool inject_dye = true;
     bool use_advection = true;
@@ -47,8 +47,8 @@ int main(){
     bool use_projection = true;
 
     // Physical size of the domain: NW*h x NH*h = 2 x 1 for a 2:1 channel
-    const double DOMAIN_W = NW * g.h;
-    const double DOMAIN_H = NH * g.h;
+    const Real DOMAIN_W = NW * g.h;
+    const Real DOMAIN_H = NH * g.h;
      
     // ---- Velocity Divergence and Pressure Fields ----
 
@@ -66,12 +66,12 @@ int main(){
 
     // ---- Strohual Measurements ----
 
-    int i_probe = static_cast<int>((cyl.xc_cyl + 3.0 * cyl.diameter) / g.h) + 1;
+    int i_probe = static_cast<int>((cyl.xc_cyl + 3.0f * cyl.diameter) / g.h) + 1;
     int j_probe = g.ny / 2 + 1;
     //frecuency calculations and csv export variables
-    double prev_v = 0.0;
-    double last_cross_time = 1.0;
-    double strohual = 0.0;
+    Real prev_v = 0.0f;
+    Real last_cross_time = 1.0f;
+    Real strohual = 0.0f;
 
     // ---- Inicialization of the program ----
 
@@ -88,14 +88,14 @@ int main(){
         //Reset the fluid with R
         if (IsKeyPressed(KEY_R)) {
         std::fill(u.a.begin(), u.a.end(), U_in);
-        std::fill(v.a.begin(), v.a.end(), 0.0);
-        std::fill(p.a.begin(), p.a.end(), 0.0);
-        std::fill(dyeR.a.begin(), dyeR.a.end(), 0.0);
-        std::fill(dyeG.a.begin(), dyeG.a.end(), 0.0);
-        std::fill(dyeB.a.begin(), dyeB.a.end(), 0.0);
-        prev_v = 0.0;
-        last_cross_time = -1.0;
-        strohual = 0.0;
+        std::fill(v.a.begin(), v.a.end(), 0.0f);
+        std::fill(p.a.begin(), p.a.end(), 0.0f);
+        std::fill(dyeR.a.begin(), dyeR.a.end(), 0.0f);
+        std::fill(dyeG.a.begin(), dyeG.a.end(), 0.0f);
+        std::fill(dyeB.a.begin(), dyeB.a.end(), 0.0f);
+        prev_v = 0.0f;
+        last_cross_time = -1.0f;
+        strohual = 0.0f;
         }
 
         //Switch Dye modes
@@ -111,21 +111,21 @@ int main(){
 
         //change viscosity
         if (IsKeyPressed(KEY_O)) {
-            nu = (nu <= 0.0) ? 1e-5 : nu * 1.5;
+            nu = (nu <= 0.0f) ? 1e-5 : nu * 1.5f;
         }
         if (IsKeyPressed(KEY_P)) {
-            nu = (nu <= 1e-7) ? 0.0 : nu / 1.5;
+            nu = (nu <= 1e-7) ? 0.0f : nu / 1.5f;
         }
         if (IsKeyPressed(KEY_I)) {
-            nu = 0.0;
+            nu = 0.0f;
         }
 
         //Change force strengh
         if (IsKeyPressed(KEY_K)) {
-            force = (force <= 1e-2) ? 5.0 : force * 1.5;
+            force = (force <= 1e-2) ? 5.0f : force * 1.5f;
         }
         if (IsKeyPressed(KEY_L)) {
-            force = (force <= 1e-2) ? force : force / 1.5;
+            force = (force <= 1e-2) ? force : force / 1.5f;
         }
         if (IsKeyPressed(KEY_J)) {
             force =15;
@@ -140,19 +140,19 @@ int main(){
             bool bot_line = inject_dye && (std::abs(j - (cy - offset)) <= half_width);
 
             if (top_line) {
-                dyeR(1, j) = 0.0;
-                dyeG(1, j) = 0.85;
-                dyeB(1, j) = 1.0;
+                dyeR(1, j) = 0.0f;
+                dyeG(1, j) = 0.85f;
+                dyeB(1, j) = 1.0f;
             } else if (bot_line) {
                 // Línea inferior: Naranja
-                dyeR(1, j) = 1.0;
-                dyeG(1, j) = 0.3;
-                dyeB(1, j) = 0.1;
+                dyeR(1, j) = 1.0f;
+                dyeG(1, j) = 0.3f;
+                dyeB(1, j) = 0.1f;
             } else {
                 // Fluido limpio en el resto de la entrada (y cuando apagas con D)
-                dyeR(1, j) = 0.0;
-                dyeG(1, j) = 0.0;
-                dyeB(1, j) = 0.0;
+                dyeR(1, j) = 0.0f;
+                dyeG(1, j) = 0.0f;
+                dyeB(1, j) = 0.0f;
             }
         }
 
@@ -168,15 +168,15 @@ int main(){
 
             //Transform screen pixels to physic coordinates [0, 1] doing while so a Y axis inversion
 
-            double mx  =  pos.x / WIN_WIDTH  * DOMAIN_W;
-            double my  =  DOMAIN_H * (1.0 - pos.y / WIN_HEIGHT);
-            double mdx =  delta.x / WIN_WIDTH  * DOMAIN_W * 60.0;
-            double mdy = -delta.y / WIN_HEIGHT * DOMAIN_H * 60.0;
+            Real mx  =  pos.x / WIN_WIDTH  * DOMAIN_W;
+            Real my  =  DOMAIN_H * (1.0f - pos.y / WIN_HEIGHT);
+            Real mdx =  delta.x / WIN_WIDTH  * DOMAIN_W * 60.0f;
+            Real mdy = -delta.y / WIN_HEIGHT * DOMAIN_H * 60.0f;
 
             //Make the applied colour change with time almost randomly using trigonometric smooth functions
-            double r_col = 0.5 + 0.5 * std::sin(sim_time * 1.5);
-            double b_col = 0.5 + 0.5 * std::sin(sim_time * 1.5 + 2.094);
-            double g_col = 0.5 + 0.5 * std::sin(sim_time * 1.5 + 4.188);
+            Real r_col = 0.5f + 0.5f * std::sin(sim_time * 1.5f);
+            Real b_col = 0.5f + 0.5f * std::sin(sim_time * 1.5f + 2.094f);
+            Real g_col = 0.5f + 0.5f * std::sin(sim_time * 1.5f + 4.188f);
 
             applyMouseBrush(u, v, dyeR, dyeB, dyeG, mx, my, mdx, mdy, r_col, b_col, g_col, dt, g.h, force);
             applyChannelVelocityBC(u, v, U_in, true, nu);
@@ -207,12 +207,12 @@ int main(){
         }
 
         //strohual meditions
-        double v_probe = v(i_probe, j_probe);
+        Real v_probe = v(i_probe, j_probe);
 
-        if (prev_v < 0.0 && v_probe >= 0.0) {
-            if (last_cross_time > 0.0) {
-                double period = sim_time - last_cross_time;
-                double freq = 1.0 / period;
+        if (prev_v < 0.0f && v_probe >= 0.0f) {
+            if (last_cross_time > 0.0f) {
+                Real period = sim_time - last_cross_time;
+                Real freq = 1.0f / period;
                 strohual = (freq * cyl.diameter) / U_in;
             }
             last_cross_time = sim_time;
@@ -232,9 +232,9 @@ int main(){
         for (int i = 1; i <= g.nx; ++i) {
             for (int j = 1; j <= g.ny; ++j) {
                 if (cyl.isSolid(i,j)) {
-                    dyeR(i, j) = 0.0;
-                    dyeG(i, j) = 0.0;
-                    dyeB(i, j) = 0.0;
+                    dyeR(i, j) = 0.0f;
+                    dyeG(i, j) = 0.0f;
+                    dyeB(i, j) = 0.0f;
                 }
             }
         }
@@ -252,20 +252,20 @@ int main(){
                 int i = px + 1;
 
                 if (view == ViewMode::DYE){
-                    unsigned char r_c = static_cast<unsigned char>(std::clamp(dyeR(i, j), 0.0, 1.0) * 255.0);
-                    unsigned char g_c = static_cast<unsigned char>(std::clamp(dyeG(i, j), 0.0, 1.0) * 255.0);
-                    unsigned char b_c = static_cast<unsigned char>(std::clamp(dyeB(i, j), 0.0, 1.0) * 255.0);
+                    unsigned char r_c = static_cast<unsigned char>(std::clamp(dyeR(i, j), 0.0f, 1.0f) * 255.0f);
+                    unsigned char g_c = static_cast<unsigned char>(std::clamp(dyeG(i, j), 0.0f, 1.0f) * 255.0f);
+                    unsigned char b_c = static_cast<unsigned char>(std::clamp(dyeB(i, j), 0.0f, 1.0f) * 255.0f);
                     pixels[py * NW + px] = Color{r_c, g_c, b_c, 255};
                     if (cyl.isSolid(i, j)) {pixels[py * NW + px] = Color{180, 180, 180, 255};} 
                 }
                 else if (view == ViewMode::VORTICITY){
-                    pixels[py * NW + px] = vorticityToColor(omega(i,j), 15.0);
+                    pixels[py * NW + px] = vorticityToColor(omega(i,j), 15.0f);
                     if (cyl.isSolid(i, j)) {pixels[py * NW + px] = Color{180, 180, 180, 255};}
                 }
                 else {
-                    double uc = uAtCenter(u, i, j);
-                    double vc = vAtCenter(v, i, j);
-                    double speed = std::hypot(uc, vc);
+                    Real uc = uAtCenter(u, i, j);
+                    Real vc = vAtCenter(v, i, j);
+                    Real speed = std::hypot(uc, vc);
                     pixels[py * NW + px] = speedToColor(speed, 4);
                     if (cyl.isSolid(i, j)) {pixels[py * NW + px] = Color{180, 180, 180, 255};}
                 }
@@ -278,12 +278,12 @@ int main(){
             ClearBackground(BLACK);
             DrawTextureEx(tex, Vector2{0.0f, 0.0f}, 0.0f, static_cast<float>(SCALE), WHITE);
             DrawFPS(10, 10);
-            if (nu > 0.0) {
-                double Re = (U_in * L_ref) / nu;
+            if (nu > 0.0f) {
+                Real Re = (U_in * L_ref) / nu;
                 DrawText(TextFormat("nu =%.2e | Re = %.1f | St = %.3f", nu, Re, strohual), 10, 35, 15, YELLOW);
             }
-            if (nu == 0.0) {
-                DrawText("nu = 0.0 | Re = inf", 10, 35, 15, YELLOW);
+            if (nu == 0.0f) {
+                DrawText("nu = 0.0f | Re = inf", 10, 35, 15, YELLOW);
             }
             DrawText(TextFormat("force =%.3e", force), 10, 60, 15, YELLOW);
             DrawText(TextFormat("[1] Adv:%s  [2] Diff:%s  [3] Pres:%s",

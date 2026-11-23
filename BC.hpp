@@ -50,12 +50,12 @@ inline void applyPressureNeumann(CellField& p) {
 inline void applyVelocityBC(FaceX& u, FaceY& v) {
     //No tresspassing meaning velocity = 0 on real walls
     for (int j = 1; j <= u.ny; ++j) {
-        u(1, j)    = 0.0;
-        u(u.nx, j) = 0.0;
+        u(1, j)    = 0.0f;
+        u(u.nx, j) = 0.0f;
     }
     for (int i = 1; i <= v.nx; ++i) {
-        v(i, 1)    = 0.0;
-        v(i, v.ny) = 0.0;
+        v(i, 1)    = 0.0f;
+        v(i, v.ny) = 0.0f;
     }
 
     //No sliding condition, tangencial velocity on boundary = 0
@@ -71,8 +71,8 @@ inline void applyVelocityBC(FaceX& u, FaceY& v) {
 //Boundary conditions for velocity on x and y separately
 inline void applyVelocityUBC(FaceX& u) {
         for (int j = 1; j <= u.ny; ++j) {
-        u(1, j)    = 0.0;
-        u(u.nx, j) = 0.0;
+        u(1, j)    = 0.0f;
+        u(u.nx, j) = 0.0f;
     }
     for (int i = 0; i <= u.nx; ++i) {
         u(i, 0)      = -u(i, 1);
@@ -82,8 +82,8 @@ inline void applyVelocityUBC(FaceX& u) {
 
 inline void applyVelocityVBC(FaceY& v) {
     for (int i = 1; i <= v.nx; ++i) {
-        v(i, 1)    = 0.0;
-        v(i, v.ny) = 0.0;
+        v(i, 1)    = 0.0f;
+        v(i, v.ny) = 0.0f;
     }
     for (int j = 0; j <= v.ny; ++j) {
         v(0, j)      = -v(1, j);
@@ -92,9 +92,9 @@ inline void applyVelocityVBC(FaceY& v) {
 }
 
 // Velocity BC for channel
-inline void applyChannelVelocityBC(FaceX& u, FaceY& v, double U_in,
-                                   bool set_outlet_face, double nu) {
-    bool free_slip = (nu <= 0.0);
+inline void applyChannelVelocityBC(FaceX& u, FaceY& v, Real U_in,
+                                   bool set_outlet_face, Real nu) {
+    bool free_slip = (nu <= 0.0f);
 
     for (int j = 1; j <= u.ny; ++j) {
         u(1, j) = U_in;
@@ -115,10 +115,10 @@ inline void applyChannelVelocityBC(FaceX& u, FaceY& v, double U_in,
     }
 
     for (int i = 1; i <= v.nx; ++i) {
-        v(i, 1)        = 0.0;
-        v(i, v.ny)     = 0.0;
-        v(i, 0)        = 0.0;
-        v(i, v.ny + 1) = 0.0;
+        v(i, 1)        = 0.0f;
+        v(i, v.ny)     = 0.0f;
+        v(i, 0)        = 0.0f;
+        v(i, v.ny + 1) = 0.0f;
     }
 
     for (int i = 0; i <= u.nx + 1; ++i) {

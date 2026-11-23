@@ -1,4 +1,5 @@
 #pragma once
+#include <omp.h>
 #include <vector>
 #include <cstdint>
 #include "grid.hpp"

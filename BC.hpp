@@ -1,4 +1,5 @@
 #pragma once
+#include <omp.h>
 #include <iostream>
 #include <cmath>
 #include <iomanip>

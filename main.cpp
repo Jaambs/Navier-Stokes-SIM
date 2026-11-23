@@ -2,6 +2,7 @@
 // Build navier-stokes simulation using raylib for visualizing
 // navier-stokes based on MAC with semi-lagragian advection Gauss-Seidel Diffusion and poisson / Gauss-Seidel presion
 #include <iostream>
+#include <omp.h>
 #include <cmath>
 #include <iomanip>
 #include <string>
@@ -31,8 +32,9 @@ int main(){
     const int SCALE      = 6;
     const int WIN_HEIGHT = NH * SCALE;
     const int WIN_WIDTH  = NW * SCALE;
-    const double dt      = 1.0 / 30.0;
+    const double dt      = 1.0 / 60.0;
     double sim_time      = 0.0;
+    SetTargetFPS(60);
     double nu = 1.67e-3;
     double force = 15.0;
     const double U_in = 1.0;
@@ -52,7 +54,7 @@ int main(){
 
     FaceX u(g), un(g);
     FaceY v(g), vn(g);
-    CellField div(g), p(g), omega(g);
+    CellField div(g), p(g), omega(g), rhs(g);
     
     // ---- RGB Dye Fields ----
 
@@ -80,7 +82,6 @@ int main(){
     SetTextureFilter(tex, TEXTURE_FILTER_BILINEAR);
 
     // ----- START OF THE SIMULATION LOOP -----
-    SetTargetFPS(60);
     while (!WindowShouldClose()) {
         sim_time += dt;
 
@@ -201,7 +202,7 @@ int main(){
         }
         // 4. --- Project ---
         if (use_projection) {
-            projectChannel(u, v, p, div, dt, g.h, U_in, nu, 80);
+            projectChannel(u, v, p, div, cyl, rhs, dt, g.h, U_in, nu, 80);
             applyCylinderVelocityBC(u, v, cyl);
         }
 
@@ -244,6 +245,7 @@ int main(){
         }
         // ----------- RENDERING -------------
         Color* pixels = static_cast<Color*>(Img.data);
+        #pragma omp parallel for schedule(static)
         for (int py = 0; py < NH; ++py) {
             int j = NH - py;
             for (int px = 0; px < NW; ++px) {

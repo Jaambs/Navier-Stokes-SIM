@@ -5,7 +5,8 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 
 # emscripten and the wasm build of raylib live outside the project
 export PATH="$HOME/emsdk/upstream/emscripten:$HOME/emsdk/upstream/bin:$PATH"
-RAYLIB="$HOME/.cache/raylib_web/src"
+RAYLIB="${RAYLIB:-$HOME/.cache/raylib_web/src}"
+SHELL_FILE=$([ -f "minshell.html" ] && echo "minshell.html" || echo "$RAYLIB/minshell.html")
 
 SOURCES="src/main.cpp src/BC.cpp src/cylinder.cpp src/mouse.cpp
          src/solver.cpp src/vorticity.cpp src/multigrid.cpp"
@@ -18,6 +19,6 @@ em++ -O2 -std=c++17 $SOURCES -o web/index.html \
     -sUSE_GLFW=3 -sASYNCIFY \
     -sINITIAL_MEMORY=67108864 -sALLOW_MEMORY_GROWTH=1 \
     -sGL_ENABLE_GET_PROC_ADDRESS \
-    --shell-file minshell.html
+    --shell-file "$SHELL_FILE"
 
 echo "built web/  ->  python3 -m http.server 8000 --directory web"

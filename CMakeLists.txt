@@ -42,6 +42,9 @@ if(USE_OPENMP)
     else()
         message(WARNING "OpenMP requested but not found; building single-threaded")
     endif()
+else()
+    # the #pragma omp lines are harmless but would warn with -Wall
+    target_compile_options(f1 PRIVATE -Wno-unknown-pragmas)
 endif()
 
 # ---- tune for this machine (native build only) ----

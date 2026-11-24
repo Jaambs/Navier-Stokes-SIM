@@ -178,3 +178,21 @@ void MultigridSolver::solve(CellField& p, int v_cycles, int nu1, int nu2, int co
     }
     p.a = sol[0].a;
 }
+
+// Update mask
+void MultigridSolver::updateMask(const CylinderMask& cyl) {
+    for (int i = 1; i <= grids[0].nx; ++i) {
+        for (int j = 1; j <= grids[0].ny; ++j) {
+            isSolid(0, i, j) = cyl.active ? cyl.isSolid(i, j) : 0;
+        }
+    }
+    for (int l = 0; l < LEVELS - 1; ++l) {
+        for (int ic = 1; ic <= grids[l + 1].nx; ++ic) {
+            for (int jc = 1; jc <= grids[l + 1].ny; ++jc) {
+                int i0 = 2 * ic - 1, j0 = 2 * jc - 1;
+                uint8_t sum = isSolid(l, i0, j0) + isSolid(l, i0 + 1, j0) + isSolid(l, i0, j0 + 1) + isSolid(l, i0 + 1, j0 + 1);
+                isSolid(l + 1, ic, jc) = (sum >= 2) ? 1 : 0;
+            }
+        }
+    }
+}

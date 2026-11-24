@@ -1,4 +1,5 @@
 #pragma once
+#include <cassert>
 #include <cstdint>
 #include <vector>
 #include "core/grid.hpp"
@@ -18,9 +19,13 @@ struct MultigridSolver {
     MultigridSolver(const Grid& g0, const CylinderMask& cyl);
 
     uint8_t& isSolid(int l, int i, int j) {
+        assert(l >= 0 && l < LEVELS);
+        assert(i >= 0 && i <= grids[l].nx + 1 && j >= 0 && j <= grids[l].ny + 1);
         return solid[l][(grids[l].ny + 2) * i + j];
     }
     uint8_t isSolid(int l, int i, int j) const {
+        assert(l >= 0 && l < LEVELS);
+        assert(i >= 0 && i <= grids[l].nx + 1 && j >= 0 && j <= grids[l].ny + 1);
         return solid[l][(grids[l].ny + 2) * i + j];
     }
 
@@ -30,4 +35,5 @@ struct MultigridSolver {
     void restrictResidue(int l);         //restrict res[l] into rhs[l+1]
     void prolongateAndAdd(int l);        //prolongate sol[l+1] into sol[l]
     void solve(CellField& p, int v_cycles = 3, int nu1 = 3, int nu2 = 4, int coarse_iters = 20);
+    void updateMask(const CylinderMask& cyl);
 };

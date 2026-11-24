@@ -134,7 +134,19 @@ int main(){
             force = 15;
         }
         if (IsKeyPressed(KEY_C)) {
-
+            cyl.active = !cyl.active;
+            mg_poisson.updateMask(cyl);
+            if (cyl.active) {
+                applyCylinderVelocityBC(u, v, cyl);
+                for (int i = 1; i <= g.nx; ++i) {
+                    for (int j = 1; j <= g.ny; ++j) {
+                        if (cyl.isSolid(i,j)) {
+                            p(i,j) = Real(0.0);
+                            dyeR(i, j) = dyeG(i, j) = dyeB(i ,j) = Real(0.0);
+                        }
+                    }
+                }
+            }
         }
         //Inyection of dye
         int cy = g.ny / 2;
@@ -237,10 +249,12 @@ int main(){
         // Blank dye inside the cylinder AFTER the swap, on the field we just computed
         for (int i = 1; i <= g.nx; ++i) {
             for (int j = 1; j <= g.ny; ++j) {
-                if (cyl.isSolid(i,j)) {
-                    dyeR(i, j) = 0.0f;
-                    dyeG(i, j) = 0.0f;
-                    dyeB(i, j) = 0.0f;
+                if (cyl.active) {
+                    if (cyl.isSolid(i,j)) {
+                        dyeR(i, j) = 0.0f;
+                        dyeG(i, j) = 0.0f;
+                        dyeB(i, j) = 0.0f;
+                    }
                 }
             }
         }
@@ -262,18 +276,24 @@ int main(){
                     unsigned char g_c = static_cast<unsigned char>(std::clamp(dyeG(i, j), 0.0f, 1.0f) * 255.0f);
                     unsigned char b_c = static_cast<unsigned char>(std::clamp(dyeB(i, j), 0.0f, 1.0f) * 255.0f);
                     pixels[py * NW + px] = Color{r_c, g_c, b_c, 255};
-                    if (cyl.isSolid(i, j)) {pixels[py * NW + px] = Color{180, 180, 180, 255};} 
+                    if (cyl.active) {
+                        if (cyl.isSolid(i, j)) {pixels[py * NW + px] = Color{180, 180, 180, 255};}
+                    }
                 }
                 else if (view == ViewMode::VORTICITY){
                     pixels[py * NW + px] = vorticityToColor(omega(i,j), 15.0f);
-                    if (cyl.isSolid(i, j)) {pixels[py * NW + px] = Color{180, 180, 180, 255};}
+                    if (cyl.active) {
+                        if (cyl.isSolid(i, j)) {pixels[py * NW + px] = Color{180, 180, 180, 255};}
+                    }
                 }
                 else {
                     Real uc = uAtCenter(u, i, j);
                     Real vc = vAtCenter(v, i, j);
                     Real speed = std::hypot(uc, vc);
                     pixels[py * NW + px] = speedToColor(speed, 4);
-                    if (cyl.isSolid(i, j)) {pixels[py * NW + px] = Color{180, 180, 180, 255};}
+                    if (cyl.active) {
+                        if (cyl.isSolid(i, j)) {pixels[py * NW + px] = Color{180, 180, 180, 255};}
+                    }
                 }
             }
         }
@@ -297,7 +317,7 @@ int main(){
                                 use_diffusion  ? "ON" : "OFF",
                                 use_projection ? "ON" : "OFF"),
                                 10, 85, 15, ORANGE);
-            DrawText("Controls: [R] Reset | [I,O,P] Viscosity | [J,K,L] Brush | [1,2,3] EQ Terms | [D] Dye Injection | [TAB] Change View", 10, 110, 15, LIGHTGRAY);
+            DrawText("Controls: [C] cylinder control | [R] Reset | [I,O,P] Viscosity | [J,K,L] Brush | [D] Dye Injection | [TAB] Change View", 10, 110, 15, LIGHTGRAY);
         EndDrawing();
 
         #if defined(PLATFORM_WEB)

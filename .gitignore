@@ -19,3 +19,6 @@ Milestones.md
 # Web build artifacts
 web/
 libraylib_web.a
+
+# CMake
+build/

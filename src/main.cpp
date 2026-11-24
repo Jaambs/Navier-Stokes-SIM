@@ -13,13 +13,14 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <cassert>
-#include "grid.hpp"
-#include "solver.hpp"
-#include "mouse.hpp"
-#include "vorticity.hpp"
-#include "BC.hpp"
-#include "cylinder.hpp"
-#include "multigrid.hpp"
+#include <algorithm>
+#include "core/grid.hpp"
+#include "physics/BC.hpp"
+#include "physics/cylinder.hpp"
+#include "physics/mouse.hpp"
+#include "physics/multigrid.hpp"
+#include "physics/solver.hpp"
+#include "physics/vorticity.hpp"
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
 #endif

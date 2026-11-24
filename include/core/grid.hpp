@@ -44,10 +44,11 @@ struct FaceX {
     FaceX(const Grid& g) 
         : nx(g.nx + 1), ny(g.ny), stride(g.ny + 2), a((g.nx + 3) * (g.ny + 2), 0.0f) {}
 
-    Real& operator()(int i, int j) {return a[stride * i + j];
-    }
-    Real operator()(int i, int j) const {return a[stride * i + j];
-    }
+    //Read-Write operator
+    Real& operator()(int i, int j) {return a[stride * i + j]; }
+
+    //Read-Only operator
+    Real operator()(int i, int j) const {return a[stride * i + j]; }
 };
 
 //Field for vertical velocity
@@ -59,10 +60,11 @@ struct FaceY {
     FaceY(const Grid& g) 
         : nx(g.nx), ny(g.ny + 1), stride(g.ny + 3), a((g.nx + 2) * (g.ny + 3), 0.0f) {}
 
-    Real& operator()(int i, int j) {return a[stride * i + j];
-    }
-    Real operator()(int i, int j) const {return a[stride * i + j];
-    }
+    //Read-Write operator
+    Real& operator()(int i, int j) {return a[stride * i + j]; }
+
+    //Read-Only operator
+    Real operator()(int i, int j) const {return a[stride * i + j]; }
 };
 
 //Center of the cells coordinates

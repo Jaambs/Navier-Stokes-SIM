@@ -1,17 +1,8 @@
-#pragma once
-#include <omp.h>
 #include <algorithm>
 #include <cmath>
-#include "solver.hpp"
-#include "grid.hpp"
+#include "physics/vorticity.hpp"
 
-//exact vorticity on a cell corner
-inline Real cornerVorticity (const FaceX& u, const FaceY& v, int i, int j, Real h) {
-    return ((v(i, j) - v(i - 1, j)) - (u(i, j) - u(i, j - 1))) / h;
-}
-
-//Vorticity calculation on center 
-inline void computeVorticity(CellField& omega, const FaceX& u, const FaceY& v, Real h) {
+void computeVorticity(CellField& omega, const FaceX& u, const FaceY& v, Real h) {
     for (int i = 1; i <= omega.nx; ++i) {
         for (int j = 1; j <= omega.ny; ++j) {
             Real w00 = cornerVorticity(u, v, i,     j,     h);
@@ -24,7 +15,7 @@ inline void computeVorticity(CellField& omega, const FaceX& u, const FaceY& v, R
 }
 
 //Color map for the vorticity Blue -> negative, Red -> Positive, White -> 0
-inline Color vorticityToColor(Real w, Real max_w) {
+Color vorticityToColor(Real w, Real max_w) {
     Real t = std::clamp(w / max_w, -1.0f, 1.0f);
     if (t >= 0) { //Blanco (255, 255, 255) a rojo (220, 30, 30)
         unsigned char gb = static_cast<unsigned char>(255 * (1 - 0.88f * t));
@@ -39,13 +30,13 @@ inline Color vorticityToColor(Real w, Real max_w) {
     }
 }
 
-//Color map for speed: black -> cyan -> yellow -> white
-inline Color speedToColor(Real speed, Real max_speed) {
+//Color map for speed: black -> cyan -> yellow -> red
+Color speedToColor(Real speed, Real max_speed) {
     Real t = std::clamp(speed / max_speed, 0.0f, 1.0f);
     Real r = 0.0f, g = 0.0f, b = 0.0f;
 
     if (t < 0.25f) {
-        // Azul oscuro (0, 0, 0.5f) -> Cian (0, 1, 1)
+        // Azul oscuro (0, 0, 0.5) -> Cian (0, 1, 1)
         Real u = t / 0.25f;
         r = 0.0f;
         g = u;
@@ -63,7 +54,7 @@ inline Color speedToColor(Real speed, Real max_speed) {
         g = 1.0f;
         b = 0.0f;
     } else {
-        // Amarillo (1, 1, 0) -> Rojo (0.9f, 0, 0)
+        // Amarillo (1, 1, 0) -> Rojo (0.9, 0, 0)
         Real u = (t - 0.75f) / 0.25f;
         r = 1.0f - 0.1f * u;
         g = 1.0f - u;

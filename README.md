@@ -51,7 +51,24 @@ The solver uses Chorin's projection method (operator splitting) on a Marker-and-
 * C++17
 * [raylib](https://www.raylib.com/) (from M6 onwards)
 
+## Layout
+
+```
+CMakeLists.txt
+include/
+  core/grid.hpp          structures + inline geometry helpers (header only)
+  physics/BC.hpp         boundary conditions
+  physics/cylinder.hpp   solid mask for the obstacle
+  physics/mouse.hpp      interactive brush
+  physics/solver.hpp     advection, projection, diffusion (template sample())
+  physics/vorticity.hpp  vortex + colour maps
+  physics/multigrid.hpp  V-cycle Poisson solver
+src/
+  main.cpp  BC.cpp  cylinder.cpp  mouse.cpp  solver.cpp  vorticity.cpp  multigrid.cpp
+```
+
 ## Build
 
-* Execute build.sh
+* Linux: `./build.sh` (CMake → `./f1`). `./build.sh -DUSE_OPENMP=OFF` to build single-threaded.
 * Windows (portable, statically linked `.exe`): `./build_win.sh` → `f1_fluid.exe`
+* Web: `./build_web.sh` → `web/`

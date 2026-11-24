@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
-# Build f1_fluid — 2D incompressible Navier-Stokes, real-time, raylib.
+# Build f1 — 2D incompressible Navier-Stokes, real-time, raylib.
+#   ./build.sh                 -> Release con OpenMP
+#   ./build.sh -DUSE_OPENMP=OFF -> sin OpenMP
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
 
-echo "raylib $(pkg-config --modversion raylib)"
-g++ -O3 -std=c++17 -march=native -DNDEBUG -Wall -Wextra -Wshadow main.cpp -o f1 \
-    $(pkg-config --cflags --libs raylib) -lm -lpthread -ldl
+cmake -B build -DCMAKE_BUILD_TYPE=Release "$@"
+cmake --build build -j
+
 cat <<'EOF'
 
-use:  ./f1 
+built ./f1
+use:  ./f1
 EOF

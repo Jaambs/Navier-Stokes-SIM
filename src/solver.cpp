@@ -1,51 +1,12 @@
-#pragma once
 #include <omp.h>
-#include <iostream>
-#include <cmath>
-#include <iomanip>
-#include <string>
-#include <fstream>
-#include <vector>
-#include <cstdlib>
-#include <raymath.h>
 #include <algorithm>
-#include "grid.hpp"
-#include "mouse.hpp"
-#include "BC.hpp"
-#include "cylinder.hpp"
-#include "multigrid.hpp"
-
-//----------------------------------------------------
-
-//Generic Bilineal interpolation algorithm
-template <typename Field>
-inline Real sample(const Field& f, Real gx, Real gy) {
-    //we take only the valid cell range without ghost cells
-    gx=std::clamp(gx, 1.0f, static_cast<Real>(f.nx));
-    gy=std::clamp(gy, 1.0f, static_cast<Real>(f.ny));
-
-    //find left inferior corner
-    int i0= static_cast<int>(std::floor(gx));
-    int j0= static_cast<int>(std::floor(gy));
-    //protection against cases where gx or gy are equal to f.nx or f.ny so i0+1 ist greater than f.nx
-    if (i0>=f.nx) i0 = f.nx-1;
-    if (j0>=f.ny) j0 = f.ny-1;
-
-    //relative distances
-    Real s= gx-i0;
-    Real t= gy-j0;
-
-    //Interpolation
-    return (1.0f - s) *  (1.0f - t) * f(i0,     j0    )
-     +        s  *      (1.0f - t) * f(i0 + 1, j0    )
-     + (1.0f - s) *             t  * f(i0,     j0 + 1)
-     +        s  *             t  * f(i0 + 1, j0 + 1);
-}
+#include <cmath>
+#include "physics/solver.hpp"
+#include "physics/BC.hpp"
 
 // ----------- ADVECTION -------------
 
-//horizontal velocity advection (u on FaceX)
-inline void advectU(FaceX& un, const FaceX& u, const FaceY& v, Real dt, Real h) {
+void advectU(FaceX& un, const FaceX& u, const FaceY& v, Real dt, Real h) {
     #pragma omp parallel for schedule(static)
     for (int i=1; i<=u.nx; ++i) {
         for (int j= 1; j <= u.ny; ++j) {
@@ -63,8 +24,7 @@ inline void advectU(FaceX& un, const FaceX& u, const FaceY& v, Real dt, Real h) 
     }
 }
 
-//vertical velocity advection (v on FaceY)
-inline void advectV(FaceY& vn, const FaceX& u, const FaceY& v, Real dt, Real h) {
+void advectV(FaceY& vn, const FaceX& u, const FaceY& v, Real dt, Real h) {
     #pragma omp parallel for schedule(static)
     for (int i=1; i<=v.nx; ++i) {
         for (int j= 1; j <= v.ny; ++j) {
@@ -82,16 +42,15 @@ inline void advectV(FaceY& vn, const FaceX& u, const FaceY& v, Real dt, Real h) 
     }
 }
 
-//scalar advection
-inline void advectScalar(CellField& d, const CellField& d0,
-                         const FaceX& u, const FaceY& v, Real dt, Real h) {
+void advectScalar(CellField& d, const CellField& d0,
+                  const FaceX& u, const FaceY& v, Real dt, Real h) {
     #pragma omp parallel for schedule(static)
     for (int i = 1; i <= d.nx; ++i) {
         for (int j = 1; j <= d.ny; ++j) {
             Real x = xc(i, h) - dt * uAtCenter(u, i, j);
             Real y = yc(j, h) - dt * vAtCenter(v, i, j);
 
-            // Convertir (x, y) a coordenadas de índice de centros
+            // Convertir (x, y) a coordenadas de indice de centros
             Real gx = x / h + 0.5f;
             Real gy = y / h + 0.5f;
 
@@ -102,8 +61,7 @@ inline void advectScalar(CellField& d, const CellField& d0,
 
 // -------------- DIVERGENCE --------------
 
-//Function to calculate the divergence inside the cell with center i+0.5f, j+0.5f
-inline void divergence(CellField& div, const FaceX& u, const FaceY& v, Real h) {
+void divergence(CellField& div, const FaceX& u, const FaceY& v, Real h) {
     #pragma omp parallel for schedule(static)
     for (int i = 1; i <= div.nx; ++i) {
         for (int j = 1; j <= div.ny; ++j) {
@@ -112,8 +70,7 @@ inline void divergence(CellField& div, const FaceX& u, const FaceY& v, Real h) {
     }
 }
 
-// Function to calculate the max value of a field inside an scalar field
-inline Real maxAbs(const CellField& f) {
+Real maxAbs(const CellField& f) {
     Real max_val = 0.0f;
     for (int i = 1; i <= f.nx; ++i) {
         for (int j = 1; j <= f.ny; ++j) {
@@ -126,19 +83,20 @@ inline Real maxAbs(const CellField& f) {
 // --------------- Poisson Solver -----------------
 
 //Gauss-Seidel Red and Black for paralelitation
-inline void gaussSeidelChannelRB(CellField& p, const CellField& rhs, const CylinderMask& cyl, Real h, int iters) {
+void gaussSeidelChannelRB(CellField& p, const CellField& rhs, const CylinderMask& cyl,
+                          Real h, int iters) {
     Real h2 = h * h;
-    
+
     #pragma omp parallel num_threads(8)
     {
         for (int k = 0; k < iters; ++k) {
             #pragma omp single
             applyChannelPressureBC(p);
             //color 0 red, color 1 black
-            for (int color = 0; color <2; ++color) {
+            for (int color = 0; color < 2; ++color) {
                 #pragma omp for schedule(static)
                 for (int i = 1; i <= p.nx; ++i) {
-                    int j_start = 1 + ((i+1+color) & 1);
+                    int j_start = 1 + ((i + 1 + color) & 1);
                     for (int j = j_start; j <= p.ny; j += 2) {
                         if (cyl.isSolid(i,j)) continue;
 
@@ -152,7 +110,6 @@ inline void gaussSeidelChannelRB(CellField& p, const CellField& rhs, const Cylin
                     }
                 }
             }
-    
         }
         applyChannelPressureBC(p);
     }
@@ -160,9 +117,8 @@ inline void gaussSeidelChannelRB(CellField& p, const CellField& rhs, const Cylin
 
 // ------------------ PROJECTION ------------------
 
-//Projection for channel
-inline void projectChannel(FaceX& u, FaceY& v, CellField& p, CellField& div, CylinderMask& cyl,
-                           CellField& rhs, Real dt, Real h, Real U_in, Real nu, int iters = 80) {
+void projectChannel(FaceX& u, FaceY& v, CellField& p, CellField& div, CylinderMask& cyl,
+                    CellField& rhs, Real dt, Real h, Real U_in, Real nu, int iters) {
 
     divergence(div, u, v, h);
     #pragma omp parallel for schedule(static)
@@ -173,7 +129,7 @@ inline void projectChannel(FaceX& u, FaceY& v, CellField& p, CellField& div, Cyl
     }
 
     // Gauss-Seidel RB
-    gaussSeidelChannelRB(p, rhs, cyl, h, iters);    
+    gaussSeidelChannelRB(p, rhs, cyl, h, iters);
 
     // substract gradient in u
     for (int i = 2; i <= u.nx; ++i) {
@@ -191,9 +147,8 @@ inline void projectChannel(FaceX& u, FaceY& v, CellField& p, CellField& div, Cyl
     applyChannelVelocityBC(u, v, U_in, false, nu);
 }
 
-//Projection for channel
-inline void projectChannelMG(FaceX& u, FaceY& v, CellField& p, CellField& div, const CylinderMask& cyl,
-                           MultigridSolver& mg, Real dt, Real h, Real U_in, Real nu) {
+void projectChannelMG(FaceX& u, FaceY& v, CellField& p, CellField& div, const CylinderMask& cyl,
+                      MultigridSolver& mg, Real dt, Real h, Real U_in, Real nu) {
 
     divergence(div, u, v, h);
     #pragma omp parallel for schedule(static)
@@ -203,7 +158,7 @@ inline void projectChannelMG(FaceX& u, FaceY& v, CellField& p, CellField& div, c
         }
     }
 
-    mg.solve(p, 3);   
+    mg.solve(p, 3);
 
     // substract gradient in u
     for (int i = 2; i <= u.nx; ++i) {
@@ -224,10 +179,8 @@ inline void projectChannelMG(FaceX& u, FaceY& v, CellField& p, CellField& div, c
 
 // ------------- Viscosity Diffusion ----------------
 
-//Diffusion for channel
-
-inline void diffuseChannelU(FaceX& u, const FaceX& u0,
-                            Real nu, Real dt, Real h, Real U_in, int iters = 30) {
+void diffuseChannelU(FaceX& u, const FaceX& u0,
+                     Real nu, Real dt, Real h, Real U_in, int iters) {
     if (nu <= 0.0f) { u.a = u0.a; return; }
     Real alpha = (nu * dt) / (h * h);
     Real inv_denom = 1.0f / (1.0f + 4.0f * alpha);
@@ -253,8 +206,8 @@ inline void diffuseChannelU(FaceX& u, const FaceX& u0,
     }
 }
 
-inline void diffuseChannelV(FaceY& v, const FaceY& v0,
-                            Real nu, Real dt, Real h, int iters = 30) {
+void diffuseChannelV(FaceY& v, const FaceY& v0,
+                     Real nu, Real dt, Real h, int iters) {
     if (nu <= 0.0f) { v.a = v0.a; return; }
     Real alpha = (nu * dt) / (h * h);
     Real inv_denom = 1.0f / (1.0f + 4.0f * alpha);
@@ -278,15 +231,10 @@ inline void diffuseChannelV(FaceY& v, const FaceY& v0,
     }
 }
 
-// ------------------------------- FUNCTIONS FOR STATIC FLUID NOT IN USE BUT USEFUL FOR OTHER PURPOSES ----------------------------------------------
+// ------------------- DEPRECATED / UNUSED ----------------
 
-//Deprecated functions
-
-//Poisson solvers
-
-//Jacobi solver (will be unused just to compare with gauss-seidel)
-inline void jacobi(CellField& p, const CellField&rhs, Real h, int iters) {
-    CellField p_new=p;
+void jacobi(CellField& p, const CellField& rhs, Real h, int iters) {
+    CellField p_new = p;
     Real h2 = h*h;
 
     for (int k = 0; k < iters; ++k) {
@@ -298,12 +246,12 @@ inline void jacobi(CellField& p, const CellField&rhs, Real h, int iters) {
                                    - h2 * rhs(i, j));
             }
         }
-        std::swap(p.a,p_new.a);
+        std::swap(p.a, p_new.a);
     }
     applyDirichletZero(p);
 }
-//GaussSeidel with Neumann condition
-inline void gaussSeidelNeumann(CellField&p, const CellField& rhs, Real h, Real iters) {
+
+void gaussSeidelNeumann(CellField& p, const CellField& rhs, Real h, Real iters) {
     Real h2 = h * h;
 
     for (int k = 0; k <= iters; ++k) {
@@ -319,8 +267,7 @@ inline void gaussSeidelNeumann(CellField&p, const CellField& rhs, Real h, Real i
     }
 }
 
-//Difussion for FaceX
-inline void DiffuseU(FaceX& u, const FaceX& u0, Real nu, Real dt, Real h, int iters) {
+void DiffuseU(FaceX& u, const FaceX& u0, Real nu, Real dt, Real h, int iters) {
     if (nu <= 0.0f) {
         u.a = u0.a;
         applyVelocityUBC(u);
@@ -331,15 +278,15 @@ inline void DiffuseU(FaceX& u, const FaceX& u0, Real nu, Real dt, Real h, int it
     for (int k = 0; k <= iters; ++k) {
         for (int i = 2; i <= u.nx - 1; ++i) {
             for (int j = 1; j <= u.ny; ++j) {
-                u(i, j) = (u0(i, j) + alpha * (u(i + 1, j) + u(i - 1, j) + u(i, j + 1) + u(i, j - 1))) * inv_denom;
+                u(i, j) = (u0(i, j) + alpha * (u(i + 1, j) + u(i - 1, j)
+                                             + u(i, j + 1) + u(i, j - 1))) * inv_denom;
             }
         }
     }
     applyVelocityUBC(u);
 }
 
-//Difussion for FaceV
-inline void DiffuseV(FaceY& v, const FaceY& v0, Real nu, Real dt, Real h, int iters) {
+void DiffuseV(FaceY& v, const FaceY& v0, Real nu, Real dt, Real h, int iters) {
     if (nu <= 0.0f) {
         v.a = v0.a;
         applyVelocityVBC(v);
@@ -351,26 +298,25 @@ inline void DiffuseV(FaceY& v, const FaceY& v0, Real nu, Real dt, Real h, int it
         applyVelocityVBC(v);
         for (int i = 1; i <= v.nx; ++i) {
             for (int j = 2; j <= v.ny - 1; ++j) {
-                v(i, j) = (v0(i, j) + alpha * (v(i + 1, j) + v(i - 1, j) + v(i, j + 1) + v(i, j - 1))) * inv_denom;
+                v(i, j) = (v0(i, j) + alpha * (v(i + 1, j) + v(i - 1, j)
+                                             + v(i, j + 1) + v(i, j - 1))) * inv_denom;
             }
         }
     }
     applyVelocityVBC(v);
 }
 
-//Projection
-
-inline void project(FaceX& u, FaceY& v, CellField& p, CellField& div, Real dt, Real h, int iter) {
+void project(FaceX& u, FaceY& v, CellField& p, CellField& div, Real dt, Real h, int iter) {
     //use divergence to calcuulate the rhs eq
     divergence(div, u, v, h);
-    CellField rhs(Grid{div.nx, div.ny, h});
+    CellField rhs_local(Grid{div.nx, div.ny, h});
     for (int i = 1; i <= div.nx; ++i) {
         for (int j = 1; j <= div.ny; ++j) {
-            rhs(i, j) = div(i, j) / dt;
+            rhs_local(i, j) = div(i, j) / dt;
         }
     }
     //Solve with gaussSeidel
-    gaussSeidelNeumann(p, rhs, h, iter);
+    gaussSeidelNeumann(p, rhs_local, h, iter);
 
     //substract the pressure gradient on the inner faces
     for (int i = 2; i <= u.nx - 1; ++i) {
@@ -387,4 +333,3 @@ inline void project(FaceX& u, FaceY& v, CellField& p, CellField& div, Real dt, R
     //reimpose velocity BC on walls
     applyVelocityBC(u, v);
 }
-

@@ -19,6 +19,7 @@
 #include "vorticity.hpp"
 #include "BC.hpp"
 #include "cylinder.hpp"
+#include "multigrid.hpp"
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
 #endif
@@ -41,6 +42,7 @@ int main(){
     const Real L_ref = 1.0f / 6.0f;
     Grid g{NW, NH, 1.0f / NH};
     CylinderMask cyl(g);
+    MultigridSolver mg_poisson(g, cyl);
     bool inject_dye = true;
     bool use_advection = true;
     bool use_diffusion = true;
@@ -54,7 +56,7 @@ int main(){
 
     FaceX u(g), un(g);
     FaceY v(g), vn(g);
-    CellField div(g), p(g), omega(g), rhs(g);
+    CellField div(g), p(g), omega(g);
     
     // ---- RGB Dye Fields ----
 
@@ -114,7 +116,7 @@ int main(){
             nu = (nu <= 0.0f) ? 1e-5 : nu * 1.5f;
         }
         if (IsKeyPressed(KEY_P)) {
-            nu = (nu <= 1e-7) ? 0.0f : nu / 1.5f;
+            nu = (nu <= Real(1e-7)) ? 0.0f : nu / 1.5f;
         }
         if (IsKeyPressed(KEY_I)) {
             nu = 0.0f;
@@ -122,13 +124,16 @@ int main(){
 
         //Change force strengh
         if (IsKeyPressed(KEY_K)) {
-            force = (force <= 1e-2) ? 5.0f : force * 1.5f;
+            force = (force <= Real(1e-2)) ? 5.0f : force * 1.5f;
         }
         if (IsKeyPressed(KEY_L)) {
-            force = (force <= 1e-2) ? force : force / 1.5f;
+            force = (force <= Real(1e-2)) ? force : force / 1.5f;
         }
         if (IsKeyPressed(KEY_J)) {
-            force =15;
+            force = 15;
+        }
+        if (IsKeyPressed(KEY_C)) {
+
         }
         //Inyection of dye
         int cy = g.ny / 2;
@@ -174,9 +179,9 @@ int main(){
             Real mdy = -delta.y / WIN_HEIGHT * DOMAIN_H * 60.0f;
 
             //Make the applied colour change with time almost randomly using trigonometric smooth functions
-            Real r_col = 0.5f + 0.5f * std::sin(sim_time * 1.5f);
-            Real b_col = 0.5f + 0.5f * std::sin(sim_time * 1.5f + 2.094f);
-            Real g_col = 0.5f + 0.5f * std::sin(sim_time * 1.5f + 4.188f);
+            Real r_col = 0.5f + 0.5f * std::sin(Real(sim_time * 1.5f));
+            Real b_col = 0.5f + 0.5f * std::sin(Real(sim_time * 1.5f + 2.094f));
+            Real g_col = 0.5f + 0.5f * std::sin(Real(sim_time * 1.5f + 4.188f));
 
             applyMouseBrush(u, v, dyeR, dyeB, dyeG, mx, my, mdx, mdy, r_col, b_col, g_col, dt, g.h, force);
             applyChannelVelocityBC(u, v, U_in, true, nu);
@@ -196,13 +201,13 @@ int main(){
         if (use_diffusion) {
             std::swap(u.a, un.a);
             std::swap(v.a, vn.a);
-            diffuseChannelU(u, un, nu, dt, g.h, U_in, 30);
-            diffuseChannelV(v, vn, nu, dt, g.h, 30);
+            diffuseChannelU(u, un, nu, dt, g.h, U_in, 15);
+            diffuseChannelV(v, vn, nu, dt, g.h, 15);
             applyCylinderVelocityBC(u, v, cyl);
         }
         // 4. --- Project ---
         if (use_projection) {
-            projectChannel(u, v, p, div, cyl, rhs, dt, g.h, U_in, nu, 80);
+            projectChannelMG(u, v, p, div, cyl, mg_poisson, dt, g.h, U_in, nu);
             applyCylinderVelocityBC(u, v, cyl);
         }
 

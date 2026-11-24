@@ -10,6 +10,5 @@ g++ -O3 -std=c++17 -march=native -DNDEBUG -Wall -Wextra -Wshadow main.cpp -o f1 
     $(pkg-config --cflags --libs raylib) -lm -lpthread -ldl
 cat <<'EOF'
 
-built ./f1
 use:  ./f1 
 EOF

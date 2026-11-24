@@ -13,6 +13,7 @@
 #include "mouse.hpp"
 #include "BC.hpp"
 #include "cylinder.hpp"
+#include "multigrid.hpp"
 
 //----------------------------------------------------
 
@@ -188,6 +189,37 @@ inline void projectChannel(FaceX& u, FaceY& v, CellField& p, CellField& div, Cyl
 
     // Reimpose BC
     applyChannelVelocityBC(u, v, U_in, false, nu);
+}
+
+//Projection for channel
+inline void projectChannelMG(FaceX& u, FaceY& v, CellField& p, CellField& div, const CylinderMask& cyl,
+                           MultigridSolver& mg, Real dt, Real h, Real U_in, Real nu) {
+
+    divergence(div, u, v, h);
+    #pragma omp parallel for schedule(static)
+    for (int i = 1; i <= div.nx; ++i) {
+        for (int j = 1; j <= div.ny; ++j) {
+            mg.rhs[0](i, j) = div(i, j) / dt;
+        }
+    }
+
+    mg.solve(p, 3);   
+
+    // substract gradient in u
+    for (int i = 2; i <= u.nx; ++i) {
+        for (int j = 1; j <= u.ny; ++j) {
+            u(i, j) -= dt * (p(i, j) - p(i - 1, j)) / h;
+        }
+    }
+    for (int i = 1; i <= v.nx; ++i) {
+        for (int j = 2; j <= v.ny - 1; ++j) {
+            v(i, j) -= dt * (p(i, j) - p(i, j - 1)) / h;
+        }
+    }
+
+    // Reimpose BC
+    applyChannelVelocityBC(u, v, U_in, false, nu);
+    applyCylinderVelocityBC(u, v, cyl);
 }
 
 // ------------- Viscosity Diffusion ----------------

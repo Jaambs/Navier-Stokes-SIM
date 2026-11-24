@@ -9,6 +9,7 @@
 
 struct CylinderMask {
     int nx, ny;
+    bool active = true;
     Real xc_cyl, yc_cyl, diameter;
     std::vector<uint8_t> solid;          // (nx+2) * (ny+2)
     std::vector<uint8_t> solidU;         // (nx+3) * (ny+2)
@@ -26,6 +27,8 @@ struct CylinderMask {
         diameter = (g.ny / 6.0f) * g.h;
         xc_cyl   = (g.nx / 5.0f) * g.h;
         yc_cyl   = (g.ny / 2.0f) * g.h;
+        active   = (diameter > Real(0.0));
+        if (!active) return;
         Real r2 = (0.5f * diameter) * (0.5f * diameter);
 
         // Marking cells that should be solid
@@ -70,6 +73,7 @@ struct CylinderMask {
 // u = 0, v = 0 on all cylinder faces
 
 inline void applyCylinderVelocityBC(FaceX& u, FaceY& v, const CylinderMask& cyl) {
+    if (!cyl.active) return;
     for (int i = 1; i <= u.nx; ++i) {
         for (int j = 1; j <= u.ny; ++j) {
             if (cyl.isSolidU(i, j)) u(i, j) = 0.0f;

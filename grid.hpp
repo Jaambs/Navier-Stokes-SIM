@@ -25,13 +25,13 @@ struct CellField {
     //Read-Write operator
     Real& operator()(int i, int j) {
         assert(i>= 0 && i <= nx + 1 && j >= 0 && j<= ny+1);
-        return a[stride *i +j];
+        return a[stride * i +j];
     }
 
     //Read-Only operator
     Real operator() (int i, int j) const {
         assert(i>= 0 && i <= nx + 1 && j >= 0 && j<= ny+1);
-        return a[stride *i +j];
+        return a[stride * i +j];
     }
 };
 

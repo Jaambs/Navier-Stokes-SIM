@@ -11,7 +11,7 @@ if [ ! -f "$RAYLIB/lib/libraylib.a" ]; then
     unzip -oq /tmp/raylib.zip -d ~/.cache/raylib_win
 fi
 
-/mnt/c/TDM-GCC-64/bin/g++.exe -O2 -std=c++17 -mwindows main.cpp -o f1_fluid.exe \
+/mnt/c/TDM-GCC-64/bin/g++.exe -O3 -std=c++17 -march=native -mwindows main.cpp -o f1_fluid.exe \
     -I"$(wslpath -w "$RAYLIB/include")" -L"$(wslpath -w "$RAYLIB/lib")" \
     -static -static-libgcc -static-libstdc++ \
     -lraylib -lopengl32 -lgdi32 -lwinmm -lshell32 -luser32 -lcomdlg32

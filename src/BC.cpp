@@ -69,8 +69,7 @@ void applyVelocityVBC(FaceY& v) {
 }
 
 void applyChannelVelocityBC(FaceX& u, FaceY& v, Real U_in,
-                            bool set_outlet_face, Real nu) {
-    bool free_slip = (nu <= 0.0f);
+                            bool set_outlet_face, bool slip) {
 
     for (int j = 1; j <= u.ny; ++j) {
         u(1, j) = U_in;
@@ -98,7 +97,7 @@ void applyChannelVelocityBC(FaceX& u, FaceY& v, Real U_in,
     }
 
     for (int i = 0; i <= u.nx + 1; ++i) {
-        if (free_slip) {
+        if (slip) {
             u(i, 0)       = u(i, 1);
             u(i, u.ny +1) = u(i, u.ny);
         } else {

@@ -20,7 +20,7 @@ void applyVelocityVBC(FaceY& v);
 // Channel version: inlet u = U_in, outlet zero-gradient, walls no-slip when
 // nu > 0 and free-slip when nu <= 0.
 void applyChannelVelocityBC(FaceX& u, FaceY& v, Real U_in,
-                            bool set_outlet_face, Real nu);
+                            bool set_outlet_face, bool slip);
 
 // Pressure BC for the channel: Neumann on inlet and walls, p = 0 at the outlet.
 void applyChannelPressureBC(CellField& p);

@@ -48,9 +48,9 @@ void gaussSeidelChannelRB(CellField& p, const CellField& rhs, const CylinderMask
 
 // -------------- PROJECTION --------------
 void projectChannel(FaceX& u, FaceY& v, CellField& p, CellField& div, CylinderMask& cyl,
-                    CellField& rhs, Real dt, Real h, Real U_in, Real nu, int iters = 80);
+                    CellField& rhs, Real dt, Real h, Real U_in, int iters, bool slip);
 void projectChannelMG(FaceX& u, FaceY& v, CellField& p, CellField& div, const CylinderMask& cyl,
-                      MultigridSolver& mg, Real dt, Real h, Real U_in, Real nu);
+                      MultigridSolver& mg, Real dt, Real h, Real U_in, bool slip);
 
 // ------------- VISCOSITY DIFFUSION --------------
 void diffuseChannelU(FaceX& u, const FaceX& u0,

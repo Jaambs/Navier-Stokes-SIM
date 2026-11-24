@@ -27,4 +27,4 @@ struct CylinderMask {
 };
 
 // u = 0, v = 0 on all cylinder faces (no-slip obstacle).
-void applyCylinderVelocityBC(FaceX& u, FaceY& v, const CylinderMask& cyl);
+void applyCylinderVelocityBC(FaceX& u, FaceY& v, const CylinderMask& cyl, bool slip);

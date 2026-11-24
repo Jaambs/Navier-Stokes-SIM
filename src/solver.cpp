@@ -118,7 +118,7 @@ void gaussSeidelChannelRB(CellField& p, const CellField& rhs, const CylinderMask
 // ------------------ PROJECTION ------------------
 
 void projectChannel(FaceX& u, FaceY& v, CellField& p, CellField& div, CylinderMask& cyl,
-                    CellField& rhs, Real dt, Real h, Real U_in, Real nu, int iters) {
+                    CellField& rhs, Real dt, Real h, Real U_in, int iters, bool slip) {
 
     divergence(div, u, v, h);
     #pragma omp parallel for schedule(static)
@@ -144,11 +144,11 @@ void projectChannel(FaceX& u, FaceY& v, CellField& p, CellField& div, CylinderMa
     }
 
     // Reimpose BC
-    applyChannelVelocityBC(u, v, U_in, false, nu);
+    applyChannelVelocityBC(u, v, U_in, false, slip);
 }
 
 void projectChannelMG(FaceX& u, FaceY& v, CellField& p, CellField& div, const CylinderMask& cyl,
-                      MultigridSolver& mg, Real dt, Real h, Real U_in, Real nu) {
+                      MultigridSolver& mg, Real dt, Real h, Real U_in, bool slip) {
 
     divergence(div, u, v, h);
     #pragma omp parallel for schedule(static)
@@ -173,8 +173,8 @@ void projectChannelMG(FaceX& u, FaceY& v, CellField& p, CellField& div, const Cy
     }
 
     // Reimpose BC
-    applyChannelVelocityBC(u, v, U_in, false, nu);
-    applyCylinderVelocityBC(u, v, cyl);
+    applyChannelVelocityBC(u, v, U_in, false, slip);
+    applyCylinderVelocityBC(u, v, cyl, slip);
 }
 
 // ------------- Viscosity Diffusion ----------------

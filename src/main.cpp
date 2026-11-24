@@ -48,6 +48,7 @@ int main(){
     bool use_advection = true;
     bool use_diffusion = true;
     bool use_projection = true;
+    bool slip = false;
 
     // Physical size of the domain: NW*h x NH*h = 2 x 1 for a 2:1 channel
     const Real DOMAIN_W = NW * g.h;
@@ -87,7 +88,6 @@ int main(){
     // ----- START OF THE SIMULATION LOOP -----
     while (!WindowShouldClose()) {
         sim_time += dt;
-
         //Reset the fluid with R
         if (IsKeyPressed(KEY_R)) {
         std::fill(u.a.begin(), u.a.end(), U_in);
@@ -111,7 +111,7 @@ int main(){
         if (IsKeyPressed(KEY_ONE))   use_advection  = !use_advection;
         if (IsKeyPressed(KEY_TWO))   use_diffusion  = !use_diffusion;
         if (IsKeyPressed(KEY_THREE)) use_projection = !use_projection;
-
+        if (IsKeyPressed(KEY_S)) slip = !slip;
         //change viscosity
         if (IsKeyPressed(KEY_O)) {
             nu = (nu <= 0.0f) ? 1e-5 : nu * 1.5f;
@@ -137,7 +137,7 @@ int main(){
             cyl.active = !cyl.active;
             mg_poisson.updateMask(cyl);
             if (cyl.active) {
-                applyCylinderVelocityBC(u, v, cyl);
+                applyCylinderVelocityBC(u, v, cyl, slip);
                 for (int i = 1; i <= g.nx; ++i) {
                     for (int j = 1; j <= g.ny; ++j) {
                         if (cyl.isSolid(i,j)) {
@@ -197,7 +197,7 @@ int main(){
             Real g_col = 0.5f + 0.5f * std::sin(Real(sim_time * 1.5f + 4.188f));
 
             applyMouseBrush(u, v, dyeR, dyeB, dyeG, mx, my, mdx, mdy, r_col, b_col, g_col, dt, g.h, force);
-            applyChannelVelocityBC(u, v, U_in, true, nu);
+            applyChannelVelocityBC(u, v, U_in, true, slip);
         }
 
         //2. --- Advect ---
@@ -206,8 +206,8 @@ int main(){
             advectV(vn, u, v, dt, g.h);
             std::swap(u.a, un.a);
             std::swap(v.a, vn.a);
-            applyChannelVelocityBC(u, v, U_in, true, nu);
-            applyCylinderVelocityBC(u, v, cyl);
+            applyChannelVelocityBC(u, v, U_in, true, slip);
+            applyCylinderVelocityBC(u, v, cyl, slip);
         }
 
         //3. --- Diffuse ---
@@ -216,12 +216,12 @@ int main(){
             std::swap(v.a, vn.a);
             diffuseChannelU(u, un, nu, dt, g.h, U_in, 15);
             diffuseChannelV(v, vn, nu, dt, g.h, 15);
-            applyCylinderVelocityBC(u, v, cyl);
+            applyCylinderVelocityBC(u, v, cyl, slip);
         }
         // 4. --- Project ---
         if (use_projection) {
-            projectChannelMG(u, v, p, div, cyl, mg_poisson, dt, g.h, U_in, nu);
-            applyCylinderVelocityBC(u, v, cyl);
+            projectChannelMG(u, v, p, div, cyl, mg_poisson, dt, g.h, U_in, slip);
+            applyCylinderVelocityBC(u, v, cyl, slip);
         }
 
         //strohual meditions
@@ -312,10 +312,11 @@ int main(){
                 DrawText("nu = 0.0f | Re = inf", 10, 35, 15, YELLOW);
             }
             DrawText(TextFormat("force =%.3e", force), 10, 60, 15, YELLOW);
-            DrawText(TextFormat("[1] Adv:%s  [2] Diff:%s  [3] Pres:%s",
+            DrawText(TextFormat("[1] Adv:%s  [2] Diff:%s  [3] Pres:%s  [S] Slip:%s",
                                 use_advection  ? "ON" : "OFF",
                                 use_diffusion  ? "ON" : "OFF",
-                                use_projection ? "ON" : "OFF"),
+                                use_projection ? "ON" : "OFF",
+                                slip ? "ON" : "OFF"),
                                 10, 85, 15, ORANGE);
             DrawText("Controls: [C] cylinder control | [R] Reset | [I,O,P] Viscosity | [J,K,L] Brush | [D] Dye Injection | [TAB] Change View", 10, 110, 15, LIGHTGRAY);
         EndDrawing();

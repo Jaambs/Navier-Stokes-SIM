@@ -44,17 +44,45 @@ CylinderMask::CylinderMask(const Grid& g)
     }
 }
 
-void applyCylinderVelocityBC(FaceX& u, FaceY& v, const CylinderMask& cyl) {
+void applyCylinderVelocityBC(FaceX& u, FaceY& v, const CylinderMask& cyl, bool slip) {
     if (!cyl.active) return;
     for (int i = 1; i <= u.nx; ++i) {
         for (int j = 1; j <= u.ny; ++j) {
-            if (cyl.isSolidU(i, j)) u(i, j) = 0.0f;
+            if (!cyl.isSolidU(i, j)) continue;
+            bool left_solid = cyl.isSolid(i - 1, j);
+            bool right_solid = cyl.isSolid(i, j);
+
+            if(!left_solid != right_solid) {
+                u(i, j) = 0.0f;
+            } else {
+                if (slip) {
+                    if (!cyl.isSolidU(i, j + 1))        u(i, j) = u(i, j + 1);
+                    else if (!cyl.isSolid(i, j - 1))    u(i, j) = u(i, j - 1);
+                    else                                u(i, j) = 0.0f; 
+                } else {
+                    u(i, j) = 0.0f;
+                }
+            }
         }
     }
 
     for (int i = 1; i <= v.nx; ++i) {
         for (int j = 1; j <= v.ny; ++j) {
-            if (cyl.isSolidV(i, j)) v(i, j) = 0.0f;
+            if (!cyl.isSolidV(i, j)) continue;
+            bool bot_solid = cyl.isSolid(i, j - 1);
+            bool top_solid = cyl.isSolid(i, j);
+
+            if (bot_solid != top_solid) {
+                v(i, j) = 0.0f;
+            } else {
+                if (slip) {
+                    if (!cyl.isSolidV(i + 1, j))      v(i, j) = v(i + 1, j);
+                    else if (!cyl.isSolidV(i - 1, j)) v(i, j) = v(i - 1, j);
+                    else                              v(i, j) = 0.0f;
+                } else {
+                    v(i, j) = 0.0f;
+                }
+            }
         }
     }
 }

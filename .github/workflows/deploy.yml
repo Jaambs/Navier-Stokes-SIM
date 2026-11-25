@@ -1,4 +1,4 @@
-name: Compile and deploy on Pages
+name: Compilar y desplegar en GitHub Pages
 
 on:
   push:
@@ -13,14 +13,17 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Download Repository code
+      - name: Download code
         uses: actions/checkout@v4
 
-      - name: Installl Emscripten
+      - name: Install Emscripten
         uses: mymindstorm/setup-emsdk@v14
 
-      - name: Compile Raylib for WebAssembly
+      - name: Compile raylib for WebAssembly
         run: |
           mkdir -p "$HOME/.cache"
           git clone --depth 1 https://github.com/raysan5/raylib.git "$HOME/.cache/raylib_web"
@@ -31,11 +34,11 @@ jobs:
           chmod +x build_web.sh
           ./build_web.sh
 
-      - name: Upload artifact to GitHub Pages
-        uses: actions/upload-pages-artifact@v3
+      - name: upload artifact to GitHub Pages
+        uses: actions/upload-pages-artifact@v4
         with:
           path: web
 
-      - name: Deploy on pages GitHub Pages
+      - name: Deploy on GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

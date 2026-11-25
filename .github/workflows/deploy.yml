@@ -1,4 +1,4 @@
-name: Compilar y desplegar en GitHub Pages
+name: Compile and deploy on pages
 
 on:
   push:
@@ -6,16 +6,11 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Download code
         uses: actions/checkout@v4
@@ -34,11 +29,8 @@ jobs:
           chmod +x build_web.sh
           ./build_web.sh
 
-      - name: upload artifact to GitHub Pages
-        uses: actions/upload-pages-artifact@v4
-        with:
-          path: web
-
       - name: Deploy on GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: web
+          branch: gh-pages
